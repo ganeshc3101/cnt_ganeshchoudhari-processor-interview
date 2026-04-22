@@ -1,0 +1,45 @@
+.root {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.searchRow {
+  display: grid;
+  gap: var(--space-3);
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 768px) {
+  .searchRow {
+    grid-template-columns: 2fr 1fr;
+  }
+}
+
+.searchField,
+.cardTypeField {
+  min-width: 0;
+}
+
+.searchIcon {
+  display: inline-flex;
+  align-items: center;
+  color: var(--color-fg-muted);
+}
+
+.rangeRow {
+  display: grid;
+  gap: var(--space-3);
+  grid-template-columns: 1fr 1fr;
+}
+
+@media (min-width: 768px) {
+  .rangeRow {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+}

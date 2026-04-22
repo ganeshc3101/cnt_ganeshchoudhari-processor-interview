@@ -1,0 +1,41 @@
+.root {
+  width: 100%;
+  height: auto;
+  display: block;
+  overflow: visible;
+}
+
+.grid {
+  stroke: var(--color-chart-grid);
+  stroke-width: 1;
+}
+
+.axisLabel {
+  font-family: var(--font-sans);
+  font-size: 0.6875rem;
+  fill: var(--color-chart-axis);
+}
+
+.line {
+  fill: none;
+  stroke: var(--color-chart-1);
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.area {
+  fill: color-mix(in srgb, var(--color-chart-1) 18%, transparent);
+  stroke: none;
+}
+
+.point {
+  fill: var(--color-bg-surface);
+  stroke: var(--color-chart-1);
+  stroke-width: 2;
+  transition: r var(--duration-fast) var(--ease-standard);
+}
+
+.point:hover {
+  r: 5;
+}

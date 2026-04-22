@@ -1,0 +1,32 @@
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+}
+
+.forgot {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-secondary-700);
+}
+
+.forgot:hover {
+  color: var(--color-primary-600);
+}
+
+.submitError {
+  padding: var(--space-3) var(--space-4);
+  background: color-mix(in srgb, var(--color-danger-500) 8%, var(--color-bg-surface));
+  color: var(--color-danger-500);
+  font-size: var(--font-size-sm);
+  border: 1px solid color-mix(in srgb, var(--color-danger-500) 20%, transparent);
+  border-radius: var(--radius-md);
+}

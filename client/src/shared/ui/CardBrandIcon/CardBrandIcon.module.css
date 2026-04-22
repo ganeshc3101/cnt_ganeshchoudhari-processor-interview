@@ -1,0 +1,47 @@
+.root {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  background: var(--color-bg-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  line-height: 1;
+  user-select: none;
+  flex-shrink: 0;
+  aspect-ratio: 780 / 500;
+}
+
+.image {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+
+.size_sm {
+  width: 32px;
+  height: auto;
+}
+
+.size_md {
+  width: 42px;
+  height: auto;
+}
+
+.size_lg {
+  width: 56px;
+  height: auto;
+}
+
+.rejected {
+  background: var(--color-bg-surface-alt);
+  border-style: dashed;
+  color: var(--color-fg-muted);
+}
+
+.rejectedIcon {
+  width: 60%;
+  height: 60%;
+  color: inherit;
+}

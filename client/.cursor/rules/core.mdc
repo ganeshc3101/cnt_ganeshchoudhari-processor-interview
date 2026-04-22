@@ -1,0 +1,77 @@
+---
+description: Core rules for the client web app — always applied
+alwaysApply: true
+---
+
+# Client — Core Rules
+
+You are working inside `client/` — a **React + TypeScript (strict) + Vite** web app.
+
+## Stack (mandatory)
+
+- React 18+, TypeScript strict, **Vite 5+** (never CRA), Node LTS >= 18
+- React Router v6 with **lazy-loaded pages**
+- **React Query v5** for server state
+- **Zustand** for global UI state (only if Context is insufficient)
+- **React Hook Form + Zod** for forms
+- **CSS Modules + CSS variables** for styling (no CSS-in-JS, no Tailwind)
+- **Vitest + React Testing Library + MSW** for tests
+- ESLint flat config + Prettier + Husky + lint-staged
+
+## Hard bans
+
+- No CRA. No `.js` files in `src/`. Only `.ts` / `.tsx`.
+- No `any`. No `@ts-ignore` (use `@ts-expect-error` with justification).
+- No `process.env` — env vars only via `src/app/config/env.ts` (which parses `import.meta.env.VITE_*` with Zod).
+- No direct `fetch` / `axios` in components or non-service hooks — go through `services/` via a hook.
+- No secrets in client code. Only `VITE_*` public values.
+- No Redux unless explicitly requested and documented.
+- No cross-feature imports into another feature's internals — go through the feature's `index.ts` or promote to `shared/`.
+
+## Where code goes
+
+```
+src/
+  app/         # providers, router, env config — composition root, no domain logic
+  features/    # vertical slices: pages/ components/ hooks/ services/ types/ lib/
+  shared/      # ui/ hooks/ lib/ api/ types/ constants/ — feature-agnostic
+  routes/      # route tree + paths.ts + layouts/
+  styles/      # tokens.css, global.css, themes/
+  assets/      # svg icons (via vite-plugin-svgr), images, fonts
+  test/        # vitest.setup.ts, test-utils.tsx, msw/
+```
+
+- Pages → `features/<f>/pages/<Name>Page.tsx`
+- Reusable UI → `shared/ui/`
+- HTTP → `features/<f>/services/` (or `shared/api/` if truly cross-cutting)
+- Pure utils → `features/<f>/lib/` or `shared/lib/`
+- Route paths → `routes/paths.ts` (single source; never inline strings)
+
+## Import rules
+
+- Absolute imports via `@/...` aliases (`@app`, `@features`, `@shared`, `@routes`, `@styles`, `@assets`). No `../../../`.
+- `shared/` MUST NOT import from `features/` or `app/`.
+- Features cross-import only via the target feature's `index.ts`.
+
+## Layering (data flow)
+
+`services → hooks → components`. Services are React-free. Hooks own fetching/URL/local state. Components only render.
+
+## Required UX states
+
+Every data-bound UI must render **loading, error, empty, success** via `<Skeleton />`, `<ErrorState onRetry />`, `<EmptyState />` from `shared/ui/`.
+
+## Theming (visual consistency)
+
+- `.claude/theming.md` is the **source of truth** for colors, typography, spacing, radii, motion, and layout. Follow it.
+- Never hardcode colors, spacing, font families/sizes, or radii in feature code. Use centralized tokens only (`--color-*`, `--space-*`, `--font-*`, `--radius-*`).
+- New visual values go into `src/styles/tokens.css` first; reference them by semantic token name (`--color-fg-primary`, `--color-bg-surface`, …) in components.
+- UI must be visually consistent across every screen — same components, same tokens, same state conventions.
+
+## When a request violates these rules
+
+Push back briefly, explain the rule, propose the compliant alternative. Do not silently deviate.
+
+## Deeper reference
+
+See `.claude/architecture.md`, `.claude/patterns.md`, `.claude/standards.md`, `.claude/theming.md` for examples and rationale. Load them on demand.

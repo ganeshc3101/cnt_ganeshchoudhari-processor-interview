@@ -1,0 +1,51 @@
+.card {
+  gap: var(--space-5);
+}
+
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.skeletonList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.cardholder {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-fg-primary);
+}
+
+.muted {
+  color: var(--color-fg-muted);
+  font-weight: var(--font-weight-regular);
+}
+
+.cardCell {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.cardNumber {
+  font-family: var(--font-mono);
+  font-size: var(--font-size-sm);
+  color: var(--color-fg-secondary);
+  white-space: nowrap;
+}
+
+.amount {
+  font-variant-numeric: tabular-nums;
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-fg-primary);
+}
+
+.when {
+  font-size: var(--font-size-sm);
+  color: var(--color-fg-secondary);
+  white-space: nowrap;
+}

@@ -1,0 +1,85 @@
+.root {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.label {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-fg-primary);
+}
+
+.field {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.input {
+  width: 100%;
+  height: var(--control-h-md);
+  padding: 0 var(--space-3);
+  font-size: var(--font-size-md);
+  color: var(--color-fg-primary);
+  background: var(--color-bg-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  transition:
+    border-color var(--duration-fast) var(--ease-standard),
+    box-shadow var(--duration-fast) var(--ease-standard),
+    background var(--duration-fast) var(--ease-standard);
+}
+
+.input::placeholder {
+  color: var(--color-fg-muted);
+}
+
+.input:hover:not(:disabled):not([aria-invalid='true']) {
+  border-color: var(--color-border-strong);
+}
+
+.input:focus {
+  outline: none;
+  border-color: var(--color-focus-ring);
+  box-shadow: 0 0 0 3px var(--color-primary-100);
+}
+
+.input:disabled {
+  background: var(--color-bg-surface-alt);
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.inputError {
+  border-color: var(--color-danger-500);
+}
+
+.inputError:focus {
+  border-color: var(--color-danger-500);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-danger-500) 20%, transparent);
+}
+
+.inputWithAdornment {
+  padding-right: calc(var(--space-3) + var(--control-h-md));
+}
+
+.adornment {
+  position: absolute;
+  right: var(--space-1);
+  top: 50%;
+  transform: translateY(-50%);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.hint {
+  font-size: var(--font-size-xs);
+  color: var(--color-fg-muted);
+}
+
+.errorText {
+  font-size: var(--font-size-xs);
+  color: var(--color-danger-500);
+}

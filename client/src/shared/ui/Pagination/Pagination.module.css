@@ -1,0 +1,29 @@
+.root {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  padding-top: var(--space-4);
+}
+
+.status {
+  font-size: var(--font-size-sm);
+  color: var(--color-fg-muted);
+}
+
+.controls {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.page {
+  font-size: var(--font-size-sm);
+  color: var(--color-fg-secondary);
+}
+
+.page strong {
+  color: var(--color-fg-primary);
+  font-weight: var(--font-weight-semibold);
+}

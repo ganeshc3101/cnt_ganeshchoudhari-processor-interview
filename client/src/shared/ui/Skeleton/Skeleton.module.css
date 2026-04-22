@@ -1,0 +1,37 @@
+.root {
+  display: inline-block;
+  width: 100%;
+  background: linear-gradient(
+    90deg,
+    var(--color-bg-surface-alt) 0%,
+    var(--color-border) 50%,
+    var(--color-bg-surface-alt) 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.4s var(--ease-standard) infinite;
+}
+
+.radius_sm {
+  border-radius: var(--radius-sm);
+}
+
+.radius_md {
+  border-radius: var(--radius-md);
+}
+
+.radius_lg {
+  border-radius: var(--radius-lg);
+}
+
+.radius_full {
+  border-radius: var(--radius-full);
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}

@@ -1,0 +1,96 @@
+---
+description: TypeScript, components, hooks, state, API, naming, testing
+globs:
+  - client/src/**/*.{ts,tsx}
+alwaysApply: false
+---
+
+# Code Rules (TS / React / State / API / Tests)
+
+## TypeScript
+
+- `strict: true`, `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`, `useUnknownInCatchVariables`.
+- Infer domain types from Zod: `type X = z.infer<typeof XSchema>`.
+- Branded types for IDs. Discriminated unions over boolean flags. `readonly` for immutable data.
+- Use `import type { ... }`. Catch as `unknown`, narrow with `instanceof`.
+- Never: `any`, non-null `!` on possibly-undefined, `as` on network data (use `Schema.parse()`), enums (use `as const` objects).
+
+## Components
+
+- Functional only. One component per file, `PascalCase.tsx`.
+- Destructure props at top; default values in destructuring. Explicit prop types (no `React.FC` unless using implicit `children`).
+- Keep <150 LOC; split when it grows. No business logic in UI (no fetching, no Zod parsing, no heavy aggregation).
+- Semantic HTML first. Icon-only buttons need `aria-label`. Visible focus rings. Keyboard-operable.
+- Event handlers: prop `onX`, internal `handleX`.
+
+## Hooks
+
+- Prefix `use`. Feature-only → `features/<f>/hooks/`; generic → `shared/hooks/`.
+- Move fetching, URL state, form state, pagination, subscriptions into hooks.
+- `useEffect` is last resort — derive during render. Every effect with a subscription/timer MUST cleanup.
+- Never sync derived state back into state with `useEffect`.
+
+## State — pick the right tool
+
+| Kind                              | Tool                              |
+| --------------------------------- | --------------------------------- |
+| Local UI                          | `useState` / `useReducer`         |
+| Derived                           | Compute in render / `useMemo`     |
+| URL-shareable (filters, paging)   | `useSearchParams` / `useUrlState` |
+| Shared in subtree                 | React Context (guard hook)        |
+| Frequently-updating global UI     | Zustand (typed selectors)         |
+| Server data                       | **React Query — no exceptions**   |
+| Forms                             | React Hook Form + Zod             |
+| Preferences                       | `useLocalStorage`                 |
+
+- Never duplicate server data into Context or Zustand.
+- Context: one per concern, expose a guard hook (`useAuth` throws if missing Provider), never expose raw context.
+- Zustand: never store server data; always consume via selectors.
+
+## API layer
+
+- All HTTP goes through `shared/api/apiClient.ts` (wraps `fetch`).
+- `apiRequest` **requires** a Zod `schema` — response is validated before return.
+- Typed errors: `HttpError`, `NetworkError`, `ValidationError` (from `shared/api/ApiError.ts`).
+- Services in `features/<f>/services/`. React-free. Map DTO → domain when shapes differ. Accept optional `AbortSignal`.
+- Hooks wrap `useQuery` / `useMutation`. Query keys as a `const` tree: `keys.all`, `keys.list(p)`, `keys.detail(id)`. Never string-concat keys.
+- Pass `signal` from `queryFn({ signal })` into the service.
+- Mutations invalidate the narrowest scope. Auth via HttpOnly cookies (`credentials: 'include'`); tokens in memory only if unavoidable.
+
+## Routing
+
+- Pages are lazy-loaded: `lazy(() => import('@/features/.../pages/XPage').then(m => ({ default: m.XPage })))`.
+- Path strings only in `routes/paths.ts`. Navigate via `<Link to={paths.x}>` / `useNavigate()`.
+- Routes reference pages only; layouts own chrome (`<Outlet />`).
+
+## Naming
+
+| Element                  | Convention                     |
+| ------------------------ | ------------------------------ |
+| Component / type / schema| `PascalCase`, schemas suffix `Schema` |
+| Hook                     | `useCamelCase`                 |
+| Service                  | `<noun>Service`                |
+| Constant                 | `UPPER_SNAKE_CASE`             |
+| Boolean                  | `is/has/can/should` prefix     |
+| Handler prop / internal  | `onX` / `handleX`              |
+| Env var                  | `VITE_UPPER_SNAKE`             |
+| CSS Module class         | `camelCase`                    |
+| CSS variable             | `--kebab-case`                 |
+| Test file                | `*.test.ts(x)`                 |
+| Folder                   | `kebab-case` or single word    |
+
+Acronyms in type/function names: `PascalCase` (`HttpClient`, not `HTTPClient`).
+
+## Testing
+
+- Vitest + RTL + MSW + `user-event`. Render via `renderWithProviders` (`src/test/test-utils.tsx`) with a **fresh QueryClient per test**.
+- Query priority: `getByRole` + `name` → `getByLabelText` → `getByText` → `getByTestId` (last resort).
+- Use `userEvent`, not `fireEvent`. Use `findBy*` for async; no arbitrary `waitFor` timeouts.
+- Mock network with MSW, never `vi.spyOn(global, 'fetch')`.
+- Coverage gate: `lib/` and `services/` ≥ 80% lines & functions. No full-tree snapshots.
+
+## Security
+
+- Validate all inbound payloads with Zod.
+- Avoid `dangerouslySetInnerHTML`; if unavoidable, sanitize with DOMPurify.
+- Never log PII or card numbers in the client.

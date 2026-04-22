@@ -1,0 +1,48 @@
+.root {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: 2px var(--space-2);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  line-height: 1;
+  letter-spacing: 0.02em;
+  border-radius: var(--radius-full);
+  white-space: nowrap;
+}
+
+.tone_neutral {
+  color: var(--color-fg-secondary);
+  background: var(--color-bg-surface-alt);
+  border: 1px solid var(--color-border);
+}
+
+.tone_brand {
+  color: var(--color-primary-700);
+  background: var(--color-primary-100);
+  border: 1px solid color-mix(in srgb, var(--color-primary-500) 30%, transparent);
+}
+
+.tone_success {
+  color: var(--color-success-500);
+  background: color-mix(in srgb, var(--color-success-500) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-success-500) 25%, transparent);
+}
+
+.tone_warning {
+  color: var(--color-warning-500);
+  background: color-mix(in srgb, var(--color-warning-500) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-warning-500) 25%, transparent);
+}
+
+.tone_danger {
+  color: var(--color-danger-500);
+  background: color-mix(in srgb, var(--color-danger-500) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-danger-500) 25%, transparent);
+}
+
+.tone_info {
+  color: var(--color-secondary-700);
+  background: color-mix(in srgb, var(--color-secondary-500) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-secondary-500) 30%, transparent);
+}
