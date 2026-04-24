@@ -1,11 +1,15 @@
 .card {
   gap: var(--space-5);
+  min-width: 0;
+  max-width: 100%;
 }
 
 .body {
   display: flex;
   flex-direction: column;
   gap: var(--space-4);
+  min-width: 0;
+  max-width: 100%;
 }
 
 .skeletonList {

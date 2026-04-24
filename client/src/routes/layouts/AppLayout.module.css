@@ -1,7 +1,11 @@
 .root {
   display: grid;
-  grid-template-rows: var(--app-header-h) 1fr;
+  grid-template-rows: auto 1fr;
+  /* Explicit single column with min 0 so wide children (tables, charts, popovers)
+     can never force the grid track to grow past the viewport. */
+  grid-template-columns: minmax(0, 1fr);
   min-height: 100dvh;
+  width: 100%;
   background: var(--color-bg-canvas);
 }
 
@@ -9,6 +13,8 @@
   position: sticky;
   top: 0;
   z-index: var(--z-sticky, 20);
+  min-width: 0;
+  max-width: 100%;
   background: color-mix(in srgb, var(--color-bg-surface) 92%, transparent);
   backdrop-filter: saturate(1.2) blur(10px);
   -webkit-backdrop-filter: saturate(1.2) blur(10px);
@@ -20,10 +26,11 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: var(--space-3);
   width: 100%;
   max-width: var(--container-max);
   margin-inline: auto;
-  padding: 0 var(--space-6);
+  padding: 0 var(--app-page-x);
   height: var(--app-header-h);
 }
 
@@ -57,18 +64,27 @@
   display: inline-flex;
   align-items: center;
   gap: var(--space-2);
-  padding: var(--space-1) var(--space-2) var(--space-1) var(--space-1);
+  padding: 3px var(--space-2) 3px 3px;
   background: var(--color-bg-surface-alt);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-full);
+  min-width: 0;
+}
+
+@media (max-width: 480px) {
+  .userChip {
+    padding: 0;
+    background: transparent;
+    border-color: transparent;
+  }
 }
 
 .avatar {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 28px;
-  height: 28px;
+  width: 30px;
+  height: 30px;
   font-family: var(--font-display);
   font-size: 0.75rem;
   font-weight: var(--font-weight-semibold);
@@ -115,8 +131,11 @@
 .signOut {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: var(--space-2);
-  padding: var(--space-2) var(--space-3);
+  width: 36px;
+  height: 36px;
+  padding: 0;
   font-family: inherit;
   font-size: var(--font-size-sm);
   font-weight: var(--font-weight-medium);
@@ -153,6 +172,10 @@
 }
 
 @media (min-width: 480px) {
+  .signOut {
+    width: auto;
+    padding: 0 var(--space-3);
+  }
   .signOutLabel {
     display: inline;
   }
@@ -161,6 +184,7 @@
 .main {
   width: 100%;
   max-width: var(--container-max);
+  min-width: 0;
   margin-inline: auto;
-  padding: var(--space-8) var(--space-6);
+  padding: var(--app-page-y) var(--app-page-x);
 }

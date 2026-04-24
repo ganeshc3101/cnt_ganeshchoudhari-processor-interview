@@ -123,9 +123,13 @@
   --z-toast: 1300;
 
   /* === Layout === */
-  --container-max: 1280px;
-  --app-header-h: 64px;
+  --container-max: 1440px;
+  --container-narrow: 800px;
+  --container-wide: 1600px;
+  --app-header-h: 56px;
   --app-sidebar-w: 256px;
+  --app-page-x: var(--space-4);
+  --app-page-y: var(--space-5);
   --control-h-sm: 32px;
   --control-h-md: 40px;
   --control-h-lg: 48px;
@@ -135,6 +139,24 @@
   --bp-md: 768px;
   --bp-lg: 1024px;
   --bp-xl: 1280px;
+  --bp-2xl: 1536px;
+}
+
+/* Tablet+ — restore comfortable header height and gutters */
+@media (min-width: 640px) {
+  :root {
+    --app-header-h: 60px;
+    --app-page-x: var(--space-5);
+    --app-page-y: var(--space-6);
+  }
+}
+
+@media (min-width: 1024px) {
+  :root {
+    --app-header-h: 64px;
+    --app-page-x: var(--space-6);
+    --app-page-y: var(--space-8);
+  }
 }
 
 [data-theme='dark'] {
