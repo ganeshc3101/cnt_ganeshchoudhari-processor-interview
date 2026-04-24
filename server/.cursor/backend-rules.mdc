@@ -1,0 +1,170 @@
+---
+description: Strict enforcement rules for the Java Spring Boot backend (Card Transaction Processor). Applied to every code change inside server/.
+globs:
+  - server/**/*.java
+  - server/**/pom.xml
+  - server/**/*.yml
+  - server/**/*.yaml
+  - server/**/*.sql
+alwaysApply: true
+---
+
+# Backend Rules (Authoritative Enforcement)
+
+Canonical references (read before every change):
+- `server/ai-rules/architecture.md`
+- `server/ai-rules/development-guidelines.md`
+- `server/ai-rules/security.md`
+- `server/ai-rules/decisions.md`
+
+Conflicts resolve in favor of the above files, then this file, then task prompt.
+
+---
+
+## Modules
+
+- DO keep two Maven modules only: `processor-core`, `processor-api`.
+- DO keep `processor-core` free of Spring, JPA, Hibernate, SQL, HTTP.
+- DO NOT add any `org.springframework.*`, `jakarta.persistence.*`, `org.hibernate.*`, `javax.sql.*` import in `processor-core`.
+- DO NOT create a new top-level module without an ADR.
+
+## Layering
+
+- DO place code in the correct package per `architecture.md §7`.
+- DO enforce dependency direction: Controller → ApplicationService → DomainService → RepositoryPort.
+- DO NOT let inner layers import outer layers.
+- DO NOT put business logic in Controllers or ApplicationServices.
+- DO keep business logic exclusively in DomainService classes inside `processor-core`.
+
+## Controllers
+
+- DO make controllers thin: parse, validate with `@Valid`, delegate, return.
+- DO return `ResponseEntity<T>` or typed response DTOs with appropriate status codes.
+- DO NOT inject any `Repository*` (port or JPA) into controllers.
+- DO NOT inject `DomainService` directly into controllers; go through `ApplicationService`.
+- DO NOT accept or return JPA entities in controller signatures.
+- DO NOT call `SecurityContextHolder` in controllers; resolve principal in the application layer.
+- DO NOT throw raw `RuntimeException`; throw typed domain/api exceptions.
+
+## Application Services
+
+- DO use `@Service` + `@Transactional` here (only here for write flows).
+- DO map DTO → Domain on the way in, Domain → DTO on the way out.
+- DO orchestrate multiple DomainServices if a use case requires it.
+- DO enforce ownership / authorization before delegating.
+- DO NOT contain business rules.
+- DO NOT bypass DomainService and talk to ports directly for decisions (queries are OK).
+
+## Domain Services (core)
+
+- DO contain all business rules, invariants, and validation logic.
+- DO depend only on `RepositoryPort` interfaces and domain types.
+- DO NOT depend on Spring (`@Service`, `@Autowired`, etc.), JPA, SQL, or HTTP.
+- DO NOT import from `processor-api`.
+- DO NOT use JPA entities or DTOs.
+
+## Repositories
+
+- DO define `RepositoryPort` interfaces in `processor-core/port/repository/` using domain types.
+- DO implement them as `RepositoryAdapter` classes in `processor-api/persistence/adapter/`.
+- DO encapsulate Spring Data JPA interfaces inside the adapter package — never inject them outside.
+- DO map Entity ↔ Domain inside the adapter.
+- DO NOT return JPA entities from a port method.
+- DO NOT accept JPA entities as port method arguments.
+
+## Domain vs Entity
+
+- DO keep domain models in `core/domain/model/`.
+- DO keep JPA entities in `api/persistence/entity/`, suffixed `Entity`.
+- DO NOT annotate domain models with JPA annotations.
+- DO NOT reuse a JPA entity as a domain model (or vice-versa).
+
+## Dependency Injection
+
+- DO use constructor injection with `final` fields.
+- DO prefer Lombok `@RequiredArgsConstructor` on Spring beans.
+- DO NOT use `@Autowired` on fields or setters.
+- DO NOT use field-level `@Inject`.
+
+## Transactions
+
+- DO place `@Transactional` only on ApplicationService methods.
+- DO use `@Transactional(readOnly = true)` for read flows.
+- DO NOT annotate DomainService, Controller, or RepositoryAdapter methods with `@Transactional`.
+
+## Security
+
+- DO keep `SecurityFilterChain` deny-by-default; explicitly `permitAll()` only the allow-list in `security.md §6`.
+- DO validate JWT signature, `iss`, `aud`, `exp` in every protected request.
+- DO use `BCryptPasswordEncoder` (strength 12) for passwords.
+- DO mask card numbers in logs to last 4 digits.
+- DO NOT log passwords, tokens, or full card numbers.
+- DO NOT store secrets in YAML or properties files.
+- DO NOT accept a user id from the request body to decide ownership — use the authenticated principal.
+
+## Validation
+
+- DO validate request DTOs with `@Valid` + Jakarta constraints.
+- DO re-validate domain invariants inside DomainService (defense in depth).
+- DO set `spring.jackson.deserialization.fail-on-unknown-properties=true`.
+- DO NOT rely solely on DTO validation for business invariants.
+
+## Error Handling
+
+- DO route all exceptions through one `@RestControllerAdvice GlobalExceptionHandler`.
+- DO return a uniform `ApiError` body (`code`, `message`, `details`, `traceId`).
+- DO NOT leak stack traces or framework messages to clients.
+- DO NOT `catch (Exception e)` without re-throwing or transforming with cause.
+
+## Money
+
+- DO use `BigDecimal` for all monetary values, constructed from `String`.
+- DO specify scale and rounding on division (default scale 2, `HALF_EVEN`).
+- DO compare with `compareTo`.
+- DO NOT use `double` or `float` for money anywhere.
+- DO NOT construct `BigDecimal` from `double` literals.
+
+## API Conventions
+
+- DO version endpoints under `/api/v1/...`.
+- DO use plural, kebab-case resource names.
+- DO paginate list endpoints (`page`, `size`, `sort` allowlist).
+- DO NOT invent non-standard status codes.
+- DO NOT use `@RequestMapping` without an HTTP method specialization.
+
+## Persistence
+
+- DO manage schema with Flyway migrations.
+- DO use `NUMERIC(19, 4)` for money columns.
+- DO NOT edit a migration after it has been deployed; add a new one.
+- DO NOT use `cascade = ALL` on `@ManyToOne`.
+
+## Logging
+
+- DO use `@Slf4j` / SLF4J with parameterized messages.
+- DO include a request/trace id via MDC.
+- DO NOT use `System.out`, `System.err`, or `printStackTrace`.
+- DO NOT concatenate strings in log calls.
+
+## Testing
+
+- DO keep `processor-core` tests free of Spring context.
+- DO use `@WebMvcTest`, `@DataJpaTest`, or Testcontainers slice tests in `processor-api`.
+- DO NOT use `Thread.sleep` in tests.
+
+## Anti-Patterns (Immediate Reject)
+
+- Inject `JpaRepository` / Spring Data repository into Controller or DomainService.
+- Return a JPA Entity from a controller.
+- Place `@Transactional` on a controller method.
+- Any Spring import inside `processor-core`.
+- `new BigDecimal(0.1)`.
+- `String sql = "SELECT ..."` assembled from request input.
+- Field `@Autowired` on any bean.
+- Silencing exceptions with `catch (Exception ignored) {}`.
+- `@CrossOrigin("*")` in production configuration.
+- Custom crypto / hash rolling.
+
+---
+
+When in doubt: prefer the rule in `ai-rules/*.md`. Ask before deviating.
