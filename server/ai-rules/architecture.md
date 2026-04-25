@@ -130,37 +130,36 @@ Request DTO ──┐
 
 ```
 server/
-├── pom.xml                              (parent, packaging=pom)
+├── pom.xml                                     (parent, packaging=pom)
 ├── processor-core/
 │   ├── pom.xml
-│   └── src/main/java/com/statementiq/processor/core/
-│       ├── domain/
-│       │   ├── model/                   (Domain objects, value objects)
-│       │   └── exception/               (Domain exceptions)
-│       ├── port/
-│       │   └── repository/              (Repository interfaces)
-│       └── service/                     (Domain services)
+│   └── src/main/java/com/processor/core/
+│       ├── model/                              (Domain objects, value objects)
+│       ├── service/                            (Domain services — business rules)
+│       ├── validator/                          (Pure validators, e.g. CardValidator)
+│       ├── parser/                             (Pure parsers, e.g. file parsers)
+│       ├── repository/                         (Repository PORT interfaces)
+│       └── exception/                          (Domain exceptions)
 └── processor-api/
     ├── pom.xml
-    └── src/main/java/com/statementiq/processor/api/
-        ├── ProcessorApplication.java    (Spring Boot main)
-        ├── config/                      (Beans, security, web, jpa config)
-        ├── web/
-        │   ├── controller/              (REST controllers)
-        │   ├── dto/                     (Request/Response DTOs)
-        │   ├── mapper/                  (DTO ↔ Domain mappers)
-        │   └── error/                   (GlobalExceptionHandler, ApiError)
-        ├── application/                 (Application services / use cases)
-        ├── persistence/
-        │   ├── entity/                  (JPA entities)
-        │   ├── repository/              (Spring Data JPA interfaces)
-        │   ├── adapter/                 (RepositoryPort impls)
-        │   └── mapper/                  (Entity ↔ Domain mappers)
-        └── security/                    (JWT filter, providers, services)
+    └── src/main/
+        ├── java/com/processor/api/
+        │   ├── ProcessorApiApplication.java    (Spring Boot main)
+        │   ├── controller/                     (REST controllers)
+        │   ├── dto/                            (Request/Response DTOs)
+        │   ├── mapper/                         (DTO ↔ Domain and Domain ↔ Entity mappers)
+        │   ├── service/                        (Application services / use cases)
+        │   ├── repository/                     (Spring Data JPA interfaces + RepositoryPort adapters)
+        │   ├── entity/                         (JPA entities)
+        │   ├── config/                         (AppConfig, DatabaseConfig, etc.)
+        │   └── security/                       (SecurityConfig, JwtFilter, JwtUtil)
+        └── resources/
+            └── application.yml
 ```
 
 - Package names are normative.
 - New top-level packages require an ADR.
+- `com.processor.api.repository` holds BOTH Spring Data JPA interfaces and the `RepositoryPort` adapter implementations. Keep Spring Data interfaces package-private when feasible and NEVER inject them from outside this package — only the adapter is consumed elsewhere.
 
 ---
 

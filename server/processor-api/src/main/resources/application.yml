@@ -1,0 +1,52 @@
+spring:
+  application:
+    name: processor-api
+
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/processor}
+    username: ${DB_USERNAME:processor}
+    password: ${DB_PASSWORD:processor}
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+    properties:
+      hibernate:
+        jdbc.time_zone: UTC
+        format_sql: false
+    show-sql: false
+
+  jackson:
+    deserialization:
+      fail-on-unknown-properties: true
+    default-property-inclusion: non_null
+
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 50MB
+
+server:
+  port: ${SERVER_PORT:8080}
+  servlet:
+    context-path: /
+  error:
+    include-message: never
+    include-stacktrace: never
+    include-binding-errors: never
+
+app:
+  security:
+    jwt:
+      issuer: processor-api
+      audience: processor-client
+      secret: ${JWT_SECRET:change-me-in-env}
+      access-token-ttl-seconds: 3600
+
+logging:
+  level:
+    root: INFO
+    com.processor: INFO
