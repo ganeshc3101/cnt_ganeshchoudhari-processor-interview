@@ -67,5 +67,15 @@
                 </plugin>
             </plugins>
         </pluginManagement>
+        <!-- Aggregator POM: never run or repackage Spring Boot on the parent. -->
+        <plugins>
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+                <configuration>
+                    <skip>true</skip>
+                </configuration>
+            </plugin>
+        </plugins>
     </build>
 </project>

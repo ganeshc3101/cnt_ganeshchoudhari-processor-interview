@@ -23,7 +23,7 @@ scripts/
     ├── 06_seed_master.sql         # brands + currencies
     ├── 07_seed_permissions.sql    # permission catalog
     ├── 08_seed_roles.sql          # SUPER_ADMIN / ADMIN / ANALYST / OPERATOR / VIEWER + mappings
-    └── 09_seed_admin_user.sql     # default admin user (password via ADMIN_PASSWORD env var)
+    └── 09_seed_admin_user.sql     # test users: admin, org_admin, operator, analyst, viewer (see server/postman/)
 ```
 
 SQL files are executed in filename order. Each is individually idempotent, so the whole pipeline can be re-run after any change without special flags.

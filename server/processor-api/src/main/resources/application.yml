@@ -29,8 +29,9 @@ spring:
       max-file-size: 10MB
       max-request-size: 50MB
 
+# Default 9091 — avoids clashing with other apps on 8080. Override: SERVER_PORT=8080
 server:
-  port: ${SERVER_PORT:8080}
+  port: ${SERVER_PORT:9091}
   servlet:
     context-path: /
   error:
@@ -43,7 +44,7 @@ app:
     jwt:
       issuer: processor-api
       audience: processor-client
-      secret: ${JWT_SECRET:change-me-in-env}
+      secret: ${JWT_SECRET:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef}
       access-token-ttl-seconds: 3600
 
 logging:

@@ -75,7 +75,7 @@ public class TransactionEntity {
     @Column(name = "version", nullable = false)
     private long version;
 
-    protected TransactionEntity() {
+    public TransactionEntity() {
         // JPA
     }
 
@@ -141,5 +141,65 @@ public class TransactionEntity {
 
     public long getVersion() {
         return version;
+    }
+
+    public void setId(UUID id) {
+        this.id = id;
+    }
+
+    public void setBatchId(UUID batchId) {
+        this.batchId = batchId;
+    }
+
+    public void setSource(String source) {
+        this.source = source;
+    }
+
+    public void setCardFirst4(String cardFirst4) {
+        this.cardFirst4 = cardFirst4;
+    }
+
+    public void setCardLast4(String cardLast4) {
+        this.cardLast4 = cardLast4;
+    }
+
+    public void setCardBrand(String cardBrand) {
+        this.cardBrand = cardBrand;
+    }
+
+    public void setCardholderName(String cardholderName) {
+        this.cardholderName = cardholderName;
+    }
+
+    public void setAmount(BigDecimal amount) {
+        this.amount = amount;
+    }
+
+    public void setCurrency(String currency) {
+        this.currency = currency;
+    }
+
+    public void setOccurredAt(Instant occurredAt) {
+        this.occurredAt = occurredAt;
+    }
+
+    public void setExternalReference(String externalReference) {
+        this.externalReference = externalReference;
+    }
+
+    public void setCreatedAt(Instant createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    public void setUpdatedAt(Instant updatedAt) {
+        this.updatedAt = updatedAt;
+    }
+
+    public void setCreatedBy(UUID createdBy) {
+        this.createdBy = createdBy;
+    }
+
+    public void setUpdatedBy(UUID updatedBy) {
+        this.updatedBy = updatedBy;
     }
 }

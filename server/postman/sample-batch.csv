@@ -1,0 +1,3 @@
+cardNumber,amount,currency,occurredAt,cardholderName
+4111111111111111,10.00,USD,,Postman Sample
+4000000000000002,5.25,USD,,Second Row

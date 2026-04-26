@@ -8,12 +8,19 @@ import com.processor.core.parser.TransactionFileParser;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import java.time.Clock;
+
 /**
  * Wires pure-Java core components into the Spring context.
  * Core classes stay free of Spring annotations — instantiation happens here.
  */
 @Configuration
 public class AppConfig {
+
+    @Bean
+    public Clock clock() {
+        return Clock.systemUTC();
+    }
 
     @Bean
     public CardValidator cardValidator() {

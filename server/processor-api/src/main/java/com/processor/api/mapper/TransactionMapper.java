@@ -1,41 +1,114 @@
 package com.processor.api.mapper;
 
-import com.processor.api.dto.TransactionRequestDto;
 import com.processor.api.dto.TransactionResponseDto;
 import com.processor.api.entity.RejectedTransactionEntity;
 import com.processor.api.entity.TransactionEntity;
+import com.processor.core.model.CardBrand;
 import com.processor.core.model.RejectedTransaction;
 import com.processor.core.model.Transaction;
+import com.processor.core.model.TransactionSource;
 import org.springframework.stereotype.Component;
 
-/**
- * Conversion between DTO ↔ Domain and Domain ↔ JPA Entity.
- * All mapping between the three representations is centralised here.
- */
+import java.util.UUID;
+
 @Component
 public class TransactionMapper {
 
-    public Transaction toDomain(TransactionRequestDto dto) {
-        throw new UnsupportedOperationException("TransactionMapper#toDomain(TransactionRequestDto) is not implemented yet");
+    public TransactionResponseDto toResponse(Transaction t) {
+        return new TransactionResponseDto(
+                t.id() != null ? t.id().toString() : null,
+                t.batchId() != null ? t.batchId().toString() : null,
+                t.source() != null ? t.source().name() : null,
+                t.cardFirst4(),
+                t.cardLast4(),
+                t.cardBrand() != null ? t.cardBrand().name() : null,
+                t.cardholderName(),
+                t.amount(),
+                t.currency(),
+                t.occurredAt(),
+                t.createdAt()
+        );
     }
 
-    public TransactionResponseDto toResponse(Transaction transaction) {
-        throw new UnsupportedOperationException("TransactionMapper#toResponse is not implemented yet");
+    public Transaction toDomain(TransactionEntity e) {
+        if (e == null) {
+            return null;
+        }
+        return new Transaction(
+                e.getId(),
+                e.getBatchId(),
+                TransactionSource.valueOf(e.getSource()),
+                e.getCardFirst4(),
+                e.getCardLast4(),
+                CardBrand.valueOf(e.getCardBrand()),
+                e.getCardholderName(),
+                e.getAmount(),
+                e.getCurrency(),
+                e.getOccurredAt(),
+                e.getCreatedBy(),
+                e.getCreatedAt()
+        );
     }
 
-    public Transaction toDomain(TransactionEntity entity) {
-        throw new UnsupportedOperationException("TransactionMapper#toDomain(TransactionEntity) is not implemented yet");
+    public TransactionEntity toNewEntity(Transaction t) {
+        TransactionEntity e = new TransactionEntity();
+        e.setId(t.id());
+        e.setBatchId(t.batchId());
+        e.setSource(t.source().name());
+        e.setCardFirst4(t.cardFirst4());
+        e.setCardLast4(t.cardLast4());
+        e.setCardBrand(t.cardBrand().name());
+        e.setCardholderName(t.cardholderName());
+        e.setAmount(t.amount());
+        e.setCurrency(t.currency());
+        e.setOccurredAt(t.occurredAt());
+        e.setCreatedBy(t.createdBy());
+        e.setCreatedAt(t.createdAt());
+        e.setUpdatedAt(t.createdAt());
+        return e;
     }
 
-    public TransactionEntity toEntity(Transaction transaction) {
-        throw new UnsupportedOperationException("TransactionMapper#toEntity is not implemented yet");
+    public RejectedTransaction toDomain(RejectedTransactionEntity e) {
+        if (e == null) {
+            return null;
+        }
+        return new RejectedTransaction(
+                e.getId(),
+                e.getBatchId(),
+                TransactionSource.valueOf(e.getSource()),
+                e.getRowNumber(),
+                e.getCardFirst4(),
+                e.getCardLast4(),
+                e.getCardholderName(),
+                e.getAmount(),
+                e.getCurrency(),
+                e.getOccurredAt(),
+                e.getReasonCode(),
+                e.getReasonMessage(),
+                null,
+                e.getCreatedBy(),
+                e.getCreatedAt()
+        );
     }
 
-    public RejectedTransaction toDomain(RejectedTransactionEntity entity) {
-        throw new UnsupportedOperationException("TransactionMapper#toDomain(RejectedTransactionEntity) is not implemented yet");
+    public RejectedTransactionEntity toNewEntity(RejectedTransaction r) {
+        RejectedTransactionEntity e = new RejectedTransactionEntity();
+        e.setId(r.id());
+        e.setBatchId(r.batchId());
+        e.setSource(r.source().name());
+        e.setRowNumber(r.rowNumber());
+        e.setCardFirst4(r.cardFirst4());
+        e.setCardLast4(r.cardLast4());
+        e.setCardholderName(r.cardholderName());
+        e.setAmount(r.amount());
+        e.setCurrency(r.currency());
+        e.setOccurredAt(r.occurredAt());
+        e.setReasonCode(r.reasonCode());
+        e.setReasonMessage(r.reasonMessage());
+        e.setCreatedAt(r.createdAt());
+        e.setUpdatedAt(r.createdAt());
+        e.setCreatedBy(r.createdBy());
+        return e;
     }
 
-    public RejectedTransactionEntity toEntity(RejectedTransaction rejected) {
-        throw new UnsupportedOperationException("TransactionMapper#toEntity(RejectedTransaction) is not implemented yet");
-    }
 }

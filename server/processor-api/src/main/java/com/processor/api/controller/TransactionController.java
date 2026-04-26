@@ -1,23 +1,29 @@
 package com.processor.api.controller;
 
+import com.processor.api.dto.BatchUploadResultDto;
+import com.processor.api.dto.PageResponseDto;
 import com.processor.api.dto.TransactionRequestDto;
 import com.processor.api.dto.TransactionResponseDto;
 import com.processor.api.service.TransactionApplicationService;
 import jakarta.validation.Valid;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
+import java.time.Instant;
+import java.util.Collections;
 import java.util.List;
 
-/**
- * REST controller for transactions.
- * MUST NOT contain business logic. Only parsing, validation, and delegation.
- */
 @RestController
 @RequestMapping("/api/v1/transactions")
 public class TransactionController {
@@ -29,17 +35,38 @@ public class TransactionController {
     }
 
     @PostMapping
+    @PreAuthorize("hasAuthority('TRANSACTIONS_WRITE')")
     public ResponseEntity<TransactionResponseDto> create(@Valid @RequestBody TransactionRequestDto request) {
-        throw new UnsupportedOperationException("TransactionController#create is not implemented yet");
+        return ResponseEntity.status(HttpStatus.CREATED).body(transactionApplicationService.createManual(request));
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasAuthority('TRANSACTIONS_READ')")
     public ResponseEntity<TransactionResponseDto> getById(@PathVariable String id) {
-        throw new UnsupportedOperationException("TransactionController#getById is not implemented yet");
+        return ResponseEntity.ok(transactionApplicationService.getById(id));
     }
 
     @GetMapping
-    public ResponseEntity<List<TransactionResponseDto>> list() {
-        throw new UnsupportedOperationException("TransactionController#list is not implemented yet");
+    @PreAuthorize("hasAuthority('TRANSACTIONS_READ')")
+    public ResponseEntity<PageResponseDto<TransactionResponseDto>> list(
+            @RequestParam(required = false) Instant from,
+            @RequestParam(required = false) Instant to,
+            @RequestParam(required = false) List<String> cardBrands,
+            @RequestParam(required = false) String minAmount,
+            @RequestParam(required = false) String maxAmount,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        List<String> brands = cardBrands != null ? cardBrands : Collections.emptyList();
+        return ResponseEntity.ok(
+                transactionApplicationService.list(from, to, brands, minAmount, maxAmount, page, size));
+    }
+
+    @PostMapping(value = "/batch", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PreAuthorize("hasAuthority('BATCHES_WRITE')")
+    public ResponseEntity<BatchUploadResultDto> uploadBatch(
+            @RequestParam("file") MultipartFile file,
+            @RequestParam(value = "format", defaultValue = "csv") String format) throws IOException {
+        return ResponseEntity.status(HttpStatus.ACCEPTED)
+                .body(transactionApplicationService.uploadBatch(format, file));
     }
 }

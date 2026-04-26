@@ -151,7 +151,8 @@ main() {
   ensure_database
   apply_sql_files
   log "Done. Database ready: postgresql://$DB_USER@$DB_HOST:$DB_PORT/$DB_NAME"
-  log "Default admin user: 'admin'  (password from ADMIN_PASSWORD env var)"
+  log "Seeded app users (password = ADMIN_PASSWORD for all): admin, org_admin, operator, analyst, viewer"
+  log "  Postman: server/postman/Processor-API.postman_collection.json + Processor-API.local.postman_environment.json"
 }
 
 main "$@"

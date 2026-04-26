@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Processor API — local help</title>
+  <style>
+    :root {
+      --bg: #0f1419;
+      --fg: #e7ecf1;
+      --muted: #8b9bab;
+      --accent: #3d8bfd;
+      --border: #243040;
+      --code: #101820;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+      background: var(--bg); color: var(--fg); line-height: 1.55;
+    }
+    .wrap { max-width: 880px; margin: 0 auto; padding: 1.5rem 1.25rem 3rem; }
+    h1 { font-size: 1.4rem; font-weight: 650; margin: 0 0 0.5rem; }
+    .sub { color: var(--muted); font-size: 0.9rem; margin: 0 0 1.5rem; }
+    h2 { font-size: 1rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); margin: 1.75rem 0 0.65rem; border-bottom: 1px solid var(--border); padding-bottom: 0.35rem; }
+    p { margin: 0.5rem 0; }
+    code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 0.85rem; }
+    code { background: var(--code); padding: 0.1em 0.35em; border-radius: 4px; }
+    pre {
+      background: var(--code); border: 1px solid var(--border); border-radius: 6px; padding: 0.9rem 1rem;
+      overflow-x: auto; margin: 0.5rem 0 1rem;
+    }
+    table { width: 100%; border-collapse: collapse; font-size: 0.9rem; margin: 0.5rem 0 1rem; }
+    th, td { text-align: left; padding: 0.5rem 0.6rem; border-bottom: 1px solid var(--border); vertical-align: top; }
+    th { color: var(--muted); font-weight: 600; }
+    .method { color: #7dd3a7; font-weight: 600; width: 4.5rem; }
+    .path { color: #b8d4ff; word-break: break-all; }
+    .hint { color: var(--muted); font-size: 0.8rem; }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>Card Transaction Processor — API (local)</h1>
+    <p class="sub">This page is served in development for quick reference. All JSON APIs (except <code>POST /api/v1/auth/login</code> and this help page) require <code>Authorization: Bearer &lt;accessToken&gt;</code>.</p>
+
+    <h2>Base URL</h2>
+    <p>Default: <code>http://localhost:9091</code> (override with <code>SERVER_PORT</code> / <code>server.port</code>).</p>
+
+    <h2>Authentication</h2>
+    <p>Login with the seeded user (or your own DB user), then use the returned token.</p>
+    <pre>curl -s -X POST http://localhost:9091/api/v1/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"username":"admin","password":"YOUR_PASSWORD"}'</pre>
+    <p class="hint">Use the same <code>ADMIN_PASSWORD</code> you passed to <code>db_setup</code> if you did not change it. Response includes <code>accessToken</code> and <code>expiresIn</code> (seconds).</p>
+    <p>On subsequent calls:</p>
+    <pre>curl -s http://localhost:9091/api/v1/auth/me \
+  -H "Authorization: Bearer &lt;accessToken&gt;"</pre>
+
+    <h2>Errors</h2>
+    <p>Failed requests return JSON: <code>{"code":"…","message":"…","traceId":null,"details":…}</code> (see <code>ApiErrorDto</code>). <code>401</code> = missing/invalid token; <code>403</code> = missing permission/role; <code>400</code> = validation or domain rule.</p>
+
+    <h2>Endpoints</h2>
+    <p class="hint">Permission column is the <code>hasAuthority('…')</code> name required. <code>POST /login</code> is public.</p>
+    <table>
+      <thead>
+        <tr><th>Method</th><th>Path</th><th>Permission</th><th>Notes</th></tr>
+      </thead>
+      <tbody>
+        <tr><td class="method">GET</td><td class="path">/</td><td>—</td><td>This help page</td></tr>
+        <tr><td class="method">GET</td><td class="path">/help</td><td>—</td><td>Same help page</td></tr>
+        <tr><td class="method">POST</td><td class="path">/api/v1/auth/login</td><td>—</td><td>Body: <code>username</code>, <code>password</code> (can be email or username)</td></tr>
+        <tr><td class="method">POST</td><td class="path">/api/v1/auth/logout</td><td>authenticated</td><td>Invalidates <code>jti</code> in DB if present</td></tr>
+        <tr><td class="method">GET</td><td class="path">/api/v1/auth/me</td><td>authenticated</td><td>Profile, roles, permission codes</td></tr>
+        <tr><td class="method">GET</td><td class="path">/api/v1/transactions</td><td>TRANSACTIONS_READ</td><td>Query: <code>from</code>, <code>to</code>, <code>cardBrands</code>, <code>minAmount</code>, <code>maxAmount</code>, <code>page</code>, <code>size</code></td></tr>
+        <tr><td class="method">GET</td><td class="path">/api/v1/transactions/{id}</td><td>TRANSACTIONS_READ</td><td>Single row</td></tr>
+        <tr><td class="method">POST</td><td class="path">/api/v1/transactions</td><td>TRANSACTIONS_WRITE</td><td>Manual create (body: <code>cardNumber</code>, <code>amount</code>, <code>currency</code>, …)</td></tr>
+        <tr><td class="method">POST</td><td class="path">/api/v1/transactions/batch</td><td>BATCHES_WRITE</td><td>Multipart: <code>file</code>, <code>format</code> = csv | json</td></tr>
+        <tr><td class="method">GET</td><td class="path">/api/v1/reports/metrics</td><td>REPORTS_READ</td><td>Query: <code>from</code>, <code>to</code> (ISO-8601)</td></tr>
+        <tr><td class="method">GET</td><td class="path">/api/v1/reports/daily-volume</td><td>REPORTS_READ</td><td>Accepted daily volume</td></tr>
+        <tr><td class="method">GET</td><td class="path">/api/v1/reports/card-distribution</td><td>REPORTS_READ</td><td>By brand, count and volume</td></tr>
+        <tr><td class="method">GET</td><td class="path">/api/v1/activity-logs</td><td>AUDIT_LOGS_READ</td><td>Query: <code>page</code>, <code>size</code></td></tr>
+        <tr><td class="method">POST</td><td class="path">/api/v1/activity-logs</td><td>AUDIT_LOGS_WRITE</td><td>Client-reported events</td></tr>
+      </tbody>
+    </table>
+
+    <h2>Environment</h2>
+    <p>Typical: <code>DB_URL</code>, <code>DB_USERNAME</code>, <code>DB_PASSWORD</code>, <code>JWT_SECRET</code> (≥ 32 bytes). See <code>server/processor-api/src/main/resources/application.yml</code>.</p>
+    <p class="hint">CORS: local Vite (5173) and common dev ports are allowed. API calls from a browser on another origin must use these origins or add them in <code>SecurityConfig</code>.</p>
+  </div>
+</body>
+</html>

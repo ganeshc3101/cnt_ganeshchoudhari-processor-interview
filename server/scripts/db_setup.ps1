@@ -151,4 +151,5 @@ Ensure-Role
 Ensure-Database
 Apply-SqlFiles
 Log "Done. Database ready: postgresql://${DB_USER}@${DB_HOST}:${DB_PORT}/${DB_NAME}"
-Log "Default admin user: 'admin'  (password from ADMIN_PASSWORD env var)"
+Log "Seeded app users (password = ADMIN_PASSWORD for all): admin, org_admin, operator, analyst, viewer"
+Log "  Postman: server/postman/Processor-API.postman_collection.json + Processor-API.local.postman_environment.json"
