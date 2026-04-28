@@ -13,7 +13,7 @@
 #   - $env:PGPASSWORD set to the 'postgres' superuser password BEFORE running
 #
 # Override defaults via environment variables:
-#   DB_NAME DB_USER DB_PASSWORD DB_HOST DB_PORT ADMIN_PASSWORD PG_SUPERUSER
+#   DB_NAME DB_USER DB_PASSWORD DB_HOST DB_PORT PG_SUPERUSER
 # ==============================================================
 
 #Requires -Version 5.1
@@ -29,7 +29,6 @@ $DB_USER        = Get-OrDefault 'DB_USER'        'processor'
 $DB_PASSWORD    = Get-OrDefault 'DB_PASSWORD'    'processor'
 $DB_HOST        = Get-OrDefault 'DB_HOST'        'localhost'
 $DB_PORT        = Get-OrDefault 'DB_PORT'        '5432'
-$ADMIN_PASSWORD = Get-OrDefault 'ADMIN_PASSWORD' 'ChangeMe!2026'
 $PG_SUPERUSER   = Get-OrDefault 'PG_SUPERUSER'   'postgres'
 $PG_SUPER_PW    = Get-OrDefault 'PGPASSWORD'     ''
 
@@ -126,22 +125,13 @@ function Ensure-Database {
 }
 
 function Apply-SqlFiles {
-    if ($ADMIN_PASSWORD -eq 'ChangeMe!2026') {
-        Warn "ADMIN_PASSWORD is set to the default dev value. Change it before any non-dev use."
-    }
-
     $files = Get-ChildItem -Path $SqlDir -Filter '*.sql' | Sort-Object Name
     if ($files.Count -eq 0) { Die "No SQL files found under $SqlDir" }
 
     foreach ($f in $files) {
         Log "Applying $($f.Name)..."
-        if ($f.Name -eq '09_seed_admin_user.sql') {
-            Invoke-Psql -User $DB_USER -Password $DB_PASSWORD -Db $DB_NAME `
-                        -ExtraArgs @('-v', "admin_password=$ADMIN_PASSWORD", '-f', $f.FullName)
-        } else {
-            Invoke-Psql -User $DB_USER -Password $DB_PASSWORD -Db $DB_NAME `
-                        -ExtraArgs @('-f', $f.FullName)
-        }
+        Invoke-Psql -User $DB_USER -Password $DB_PASSWORD -Db $DB_NAME `
+                    -ExtraArgs @('-f', $f.FullName)
     }
 }
 
@@ -151,5 +141,5 @@ Ensure-Role
 Ensure-Database
 Apply-SqlFiles
 Log "Done. Database ready: postgresql://${DB_USER}@${DB_HOST}:${DB_PORT}/${DB_NAME}"
-Log "Seeded app users (password = ADMIN_PASSWORD for all): admin, org_admin, operator, analyst, viewer"
+Log "Seeded users (hashes in 09_seed_admin_user.sql — set Postman seedPassword to your Java plaintext)."
 Log "  Postman: server/postman/Processor-API.postman_collection.json + Processor-API.local.postman_environment.json"

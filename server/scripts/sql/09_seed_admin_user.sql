@@ -1,15 +1,18 @@
 -- ============================================================
 -- 09_seed_admin_user.sql
--- Seed test users (same password) for local / Postman scenarios.
--- Password is passed by the bootstrap script as psql variable :admin_password
--- (NEVER hard-code here). BCrypt via pgcrypto; Spring Security verifies.
+-- Seed RBAC test users for local / Postman. Idempotent.
 --
--- Users (all use ADMIN_PASSWORD from db_setup / db_setup.ps1):
---   admin       — SUPER_ADMIN (full access, incl. hypothet. USERS_DELETE)
---   org_admin   — ADMIN (all perms except USERS_DELETE; same API as super here)
---   operator    — OPERATOR (txn/batch write, no AUDIT_LOGS_READ)
---   analyst     — ANALYST (read-only txns, has AUDIT_LOGS_READ, no TXN write)
---   viewer      — VIEWER (read txns/reports, no AUDIT_LOGS_READ, no batch write)
+-- password_hash values are Spring/Java BCrypt ($2a$12$...) — NOT computed in SQL.
+-- Set Postman `seedPassword` (and clients) to the **plaintext you used in Java**
+-- when generating these hashes (often one password shared across users).
+--
+-- Re-run updates: INSERTs skip existing usernames; UPDATE block refreshes hashes.
+--
+--   admin      — SUPER_ADMIN
+--   org_admin  — ADMIN
+--   operator   — OPERATOR
+--   analyst    — ANALYST
+--   viewer     — VIEWER
 --
 -- See server/postman/Processor-API.postman_collection.json for scenarios.
 -- ============================================================
@@ -31,7 +34,7 @@ SELECT
     gen_random_uuid(),
     'admin',
     'admin@processor.local',
-    crypt(:'admin_password', gen_salt('bf', 12)),
+    '$2a$12$yBMQq6tHjNbvQFXffT6hwupBiPDDUDlHRQGhN23.bcd0XLRLBc0De',
     'System',
     'Administrator',
     'System Administrator',
@@ -58,7 +61,7 @@ SELECT
     gen_random_uuid(),
     'org_admin',
     'org_admin@processor.local',
-    crypt(:'admin_password', gen_salt('bf', 12)),
+    '$2a$12$.z4J.0gsQ/0FL6ZkmkqlNuToMIynaJLsHxD1b4fL3Udq/vNLoDh3S',
     'Org',
     'Administrator',
     'Organization Administrator',
@@ -81,7 +84,7 @@ SELECT
     gen_random_uuid(),
     'operator',
     'operator@processor.local',
-    crypt(:'admin_password', gen_salt('bf', 12)),
+    '$2a$12$Cd666TeAIkImiC28viNCKe27I6EEoQUYXpKUvHLMEtCL/kgWkVKFW',
     'Batch',
     'Operator',
     'Transaction Operator',
@@ -104,7 +107,7 @@ SELECT
     gen_random_uuid(),
     'analyst',
     'analyst@processor.local',
-    crypt(:'admin_password', gen_salt('bf', 12)),
+    '$2a$12$2AATECVvIfnd5uxAz2RT0eMEIzPK8a1xzj75PBflby0BcF4DF.pUW',
     'Read',
     'Analyst',
     'Reporting Analyst',
@@ -127,7 +130,7 @@ SELECT
     gen_random_uuid(),
     'viewer',
     'viewer@processor.local',
-    crypt(:'admin_password', gen_salt('bf', 12)),
+    '$2a$12$Xccxf.FLENnIVJMcUr2g9uOj7jqnSMc9hz4wziR0VN.cMBbnf/uVC',
     'Casual',
     'Viewer',
     'Read-only Viewer',
@@ -140,3 +143,15 @@ FROM users u
 JOIN roles r ON r.code = 'VIEWER'
 WHERE LOWER(u.username) = 'viewer'
 ON CONFLICT DO NOTHING;
+
+-- Keep hashes in this file authoritative when db_setup is re-run
+UPDATE users SET password_hash = '$2a$12$yBMQq6tHjNbvQFXffT6hwupBiPDDUDlHRQGhN23.bcd0XLRLBc0De', password_updated_at = now()
+WHERE LOWER(username) = 'admin';
+UPDATE users SET password_hash = '$2a$12$.z4J.0gsQ/0FL6ZkmkqlNuToMIynaJLsHxD1b4fL3Udq/vNLoDh3S', password_updated_at = now()
+WHERE LOWER(username) = 'org_admin';
+UPDATE users SET password_hash = '$2a$12$Cd666TeAIkImiC28viNCKe27I6EEoQUYXpKUvHLMEtCL/kgWkVKFW', password_updated_at = now()
+WHERE LOWER(username) = 'operator';
+UPDATE users SET password_hash = '$2a$12$2AATECVvIfnd5uxAz2RT0eMEIzPK8a1xzj75PBflby0BcF4DF.pUW', password_updated_at = now()
+WHERE LOWER(username) = 'analyst';
+UPDATE users SET password_hash = '$2a$12$Xccxf.FLENnIVJMcUr2g9uOj7jqnSMc9hz4wziR0VN.cMBbnf/uVC', password_updated_at = now()
+WHERE LOWER(username) = 'viewer';

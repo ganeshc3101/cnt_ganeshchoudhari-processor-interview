@@ -118,7 +118,7 @@ CREATE TABLE IF NOT EXISTS auth_sessions (
     issued_at     TIMESTAMPTZ    NOT NULL,
     expires_at    TIMESTAMPTZ    NOT NULL,
     revoked_at    TIMESTAMPTZ,
-    client_ip     INET,
+    client_ip     VARCHAR(45),
     user_agent    TEXT,
     created_at    TIMESTAMPTZ    NOT NULL DEFAULT now(),
     CONSTRAINT fk_sessions_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE

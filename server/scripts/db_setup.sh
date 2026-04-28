@@ -9,7 +9,7 @@
 # - Seeds master data, permissions, roles, and the admin user.
 #
 # Override defaults via env vars:
-#   DB_NAME DB_USER DB_PASSWORD DB_HOST DB_PORT ADMIN_PASSWORD
+#   DB_NAME DB_USER DB_PASSWORD DB_HOST DB_PORT
 # ==============================================================
 
 set -euo pipefail
@@ -19,7 +19,6 @@ DB_USER="${DB_USER:-processor}"
 DB_PASSWORD="${DB_PASSWORD:-processor}"
 DB_HOST="${DB_HOST:-localhost}"
 DB_PORT="${DB_PORT:-5432}"
-ADMIN_PASSWORD="${ADMIN_PASSWORD:-ChangeMe!2026}"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SQL_DIR="$SCRIPT_DIR/sql"
@@ -120,10 +119,6 @@ ensure_database() {
 }
 
 apply_sql_files() {
-  if [ "$ADMIN_PASSWORD" = "ChangeMe!2026" ]; then
-    warn "ADMIN_PASSWORD is set to the default dev value. Change it before any non-dev use."
-  fi
-
   shopt -s nullglob
   local files=("$SQL_DIR"/*.sql)
   shopt -u nullglob
@@ -136,11 +131,7 @@ apply_sql_files() {
     local name
     name="$(basename "$sql")"
     log "Applying $name..."
-    if [ "$name" = "09_seed_admin_user.sql" ]; then
-      user_psql -v ON_ERROR_STOP=1 -v admin_password="$ADMIN_PASSWORD" -f "$sql"
-    else
-      user_psql -v ON_ERROR_STOP=1 -f "$sql"
-    fi
+    user_psql -v ON_ERROR_STOP=1 -f "$sql"
   done
 }
 
@@ -151,7 +142,7 @@ main() {
   ensure_database
   apply_sql_files
   log "Done. Database ready: postgresql://$DB_USER@$DB_HOST:$DB_PORT/$DB_NAME"
-  log "Seeded app users (password = ADMIN_PASSWORD for all): admin, org_admin, operator, analyst, viewer"
+  log "Seeded users (password hashes in 09_seed_admin_user.sql — set Postman seedPassword to your Java plaintext)."
   log "  Postman: server/postman/Processor-API.postman_collection.json + Processor-API.local.postman_environment.json"
 }
 

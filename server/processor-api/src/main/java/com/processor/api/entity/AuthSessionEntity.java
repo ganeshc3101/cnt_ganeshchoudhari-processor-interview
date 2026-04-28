@@ -28,7 +28,7 @@ public class AuthSessionEntity {
     @Column(name = "revoked_at")
     private Instant revokedAt;
 
-    @Column(name = "client_ip", columnDefinition = "inet")
+    @Column(name = "client_ip", length = 45)
     private String clientIp;
 
     @Column(name = "user_agent", columnDefinition = "text")

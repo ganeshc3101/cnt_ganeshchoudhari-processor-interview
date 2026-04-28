@@ -52,7 +52,7 @@
     <pre>curl -s -X POST http://localhost:9091/api/v1/auth/login \
   -H "Content-Type: application/json" \
   -d '{"username":"admin","password":"YOUR_PASSWORD"}'</pre>
-    <p class="hint">Use the same <code>ADMIN_PASSWORD</code> you passed to <code>db_setup</code> if you did not change it. Response includes <code>accessToken</code> and <code>expiresIn</code> (seconds).</p>
+    <p class="hint">Passwords are the BCrypt hashes in <code>server/scripts/sql/09_seed_admin_user.sql</code>; use the <strong>plaintext you encoded in Java</strong> when logging in (and in Postman <code>seedPassword</code>). Response includes <code>accessToken</code> and <code>expiresIn</code> (seconds).</p>
     <p>On subsequent calls:</p>
     <pre>curl -s http://localhost:9091/api/v1/auth/me \
   -H "Authorization: Bearer &lt;accessToken&gt;"</pre>

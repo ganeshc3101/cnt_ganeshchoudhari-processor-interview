@@ -117,7 +117,7 @@ collection = {
 `token*` and `lastTransactionId` are **collection** variables (filled by test scripts or by you), not the env files.
 
 ### App setup
-1. Run PostgreSQL and `server/scripts/db_setup.sh` (or `db_setup.ps1`). `ADMIN_PASSWORD` (12+ chars) = **`seedPassword`** in the **Local** environment. Default `ChangeMe!2026` matches db_setup.
+1. Run PostgreSQL and `server/scripts/db_setup.sh` (or `db_setup.ps1`). Set **`seedPassword`** to the **plaintext** you used in Java to generate the BCrypt hashes in `09_seed_admin_user.sql` (must be 12–128 chars per API validation).
 2. **Seeded users** (one password, different roles for RBAC tests):
    - **`admin`** — SUPER_ADMIN
    - **`org_admin`** — ADMIN
@@ -249,7 +249,11 @@ auth.append(
 )
 
 collection["item"].append(
-    folder("1. Auth", "Login, `/me`, optional logout. **Use `{{seedPassword}}` = db_setup `ADMIN_PASSWORD`.**", auth)
+    folder(
+        "1. Auth",
+        "Login, `/me`, optional logout. **`{{seedPassword}}`** = plaintext matching `09_seed_admin_user.sql` hashes.",
+        auth,
+    )
 )
 
 # 2. Transactions
