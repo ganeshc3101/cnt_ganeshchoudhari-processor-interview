@@ -14,6 +14,7 @@ import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -69,6 +70,15 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiErrorDto> notReadable(HttpMessageNotReadableException e, HttpServletRequest req) {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body(new ApiErrorDto("BAD_REQUEST", "Malformed request body", traceId(req), null));
+    }
+
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<ApiErrorDto> typeMismatch(MethodArgumentTypeMismatchException e, HttpServletRequest req) {
+        String msg = e.getName() != null && e.getValue() != null
+                ? "Invalid value for '%s': %s".formatted(e.getName(), e.getValue())
+                : "Invalid request parameter";
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(new ApiErrorDto("BAD_REQUEST", msg, traceId(req), null));
     }
 
     @ExceptionHandler(Exception.class)

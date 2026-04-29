@@ -23,6 +23,7 @@ import java.io.IOException;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1/transactions")
@@ -42,7 +43,7 @@ public class TransactionController {
 
     @GetMapping("/{id}")
     @PreAuthorize("hasAuthority('TRANSACTIONS_READ')")
-    public ResponseEntity<TransactionResponseDto> getById(@PathVariable String id) {
+    public ResponseEntity<TransactionResponseDto> getById(@PathVariable("id") UUID id) {
         return ResponseEntity.ok(transactionApplicationService.getById(id));
     }
 

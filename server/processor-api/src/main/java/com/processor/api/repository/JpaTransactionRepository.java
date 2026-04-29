@@ -27,8 +27,8 @@ public interface JpaTransactionRepository extends JpaRepository<TransactionEntit
     List<Object[]> groupByCardBrand(@Param("f") Instant f, @Param("t") Instant t);
 
     @Query(value = """
-            select (date_trunc('day', t.occurred_at at time zone 'UTC'))::date as d,
-                   count(*)::bigint,
+            select cast(date_trunc('day', t.occurred_at at time zone 'UTC') as date) as d,
+                   cast(count(*) as bigint),
                    coalesce(sum(t.amount), 0) as v
             from transactions t
             where t.occurred_at >= :f and t.occurred_at < :t

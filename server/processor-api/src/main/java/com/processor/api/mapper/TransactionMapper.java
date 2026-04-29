@@ -3,16 +3,38 @@ package com.processor.api.mapper;
 import com.processor.api.dto.TransactionResponseDto;
 import com.processor.api.entity.RejectedTransactionEntity;
 import com.processor.api.entity.TransactionEntity;
+import com.processor.core.exception.ProcessingException;
 import com.processor.core.model.CardBrand;
 import com.processor.core.model.RejectedTransaction;
 import com.processor.core.model.Transaction;
 import com.processor.core.model.TransactionSource;
 import org.springframework.stereotype.Component;
 
+import java.util.Locale;
 import java.util.UUID;
 
 @Component
 public class TransactionMapper {
+
+    private static String normEnum(String raw) {
+        return raw == null ? "" : raw.trim().toUpperCase(Locale.ROOT);
+    }
+
+    private static TransactionSource parseSource(String raw) {
+        try {
+            return TransactionSource.valueOf(normEnum(raw));
+        } catch (IllegalArgumentException e) {
+            throw new ProcessingException("CORRUPT_DATA", "Invalid transaction source stored in DB: " + raw);
+        }
+    }
+
+    private static CardBrand parseCardBrand(String raw) {
+        try {
+            return CardBrand.valueOf(normEnum(raw));
+        } catch (IllegalArgumentException e) {
+            throw new ProcessingException("CORRUPT_DATA", "Invalid card brand stored in DB: " + raw);
+        }
+    }
 
     public TransactionResponseDto toResponse(Transaction t) {
         return new TransactionResponseDto(
@@ -37,10 +59,10 @@ public class TransactionMapper {
         return new Transaction(
                 e.getId(),
                 e.getBatchId(),
-                TransactionSource.valueOf(e.getSource()),
+                parseSource(e.getSource()),
                 e.getCardFirst4(),
                 e.getCardLast4(),
-                CardBrand.valueOf(e.getCardBrand()),
+                parseCardBrand(e.getCardBrand()),
                 e.getCardholderName(),
                 e.getAmount(),
                 e.getCurrency(),
@@ -75,7 +97,7 @@ public class TransactionMapper {
         return new RejectedTransaction(
                 e.getId(),
                 e.getBatchId(),
-                TransactionSource.valueOf(e.getSource()),
+                parseSource(e.getSource()),
                 e.getRowNumber(),
                 e.getCardFirst4(),
                 e.getCardLast4(),

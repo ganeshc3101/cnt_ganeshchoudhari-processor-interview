@@ -21,10 +21,18 @@ public class DateRangeService {
     }
 
     public Instant fromOrDefault(Instant from) {
+        return fromOrDefault(from, DEFAULT_DAYS);
+    }
+
+    /**
+     * When {@code from} is null, uses now minus {@code daysBackWhenNull} (minimum 1 day).
+     */
+    public Instant fromOrDefault(Instant from, int daysBackWhenNull) {
         if (from != null) {
             return from;
         }
-        return clock.instant().minus(DEFAULT_DAYS, ChronoUnit.DAYS);
+        int days = daysBackWhenNull < 1 ? DEFAULT_DAYS : daysBackWhenNull;
+        return clock.instant().minus(days, ChronoUnit.DAYS);
     }
 
     public Instant toOrDefault(Instant to) {

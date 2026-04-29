@@ -90,9 +90,8 @@ public class TransactionApplicationService {
     }
 
     @Transactional(readOnly = true)
-    public TransactionResponseDto getById(String id) {
-        UUID u = UUID.fromString(id);
-        return transactionRepository.findById(u)
+    public TransactionResponseDto getById(UUID id) {
+        return transactionRepository.findById(id)
                 .map(transactionMapper::toResponse)
                 .orElseThrow(() -> new ProcessingException("NOT_FOUND", "Transaction not found"));
     }

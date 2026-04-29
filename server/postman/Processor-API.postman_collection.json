@@ -1118,7 +1118,7 @@
     },
     {
       "name": "4. Reports",
-      "description": "Optional query params: `from`, `to` (ISO-8601 instants).",
+      "description": "Optional query params: `from`, `to` (ISO-8601 instants). `daily-volume` defaults to the **last 90 days** when both are omitted; other report endpoints use a shorter default.",
       "item": [
         {
           "name": "GET /reports/metrics (200) — viewer",
@@ -1157,7 +1157,7 @@
           ]
         },
         {
-          "name": "GET /reports/daily-volume (200) — org_admin",
+          "name": "GET /reports/daily-volume (200) — org_admin, no params",
           "request": {
             "method": "GET",
             "header": [
@@ -1177,7 +1177,44 @@
                 "reports",
                 "daily-volume"
               ]
+            },
+            "description": "Default window: last **90 days** through now when `from` / `to` are omitted."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"HTTP 200\", function() { pm.response.to.have.status(200); });"
+                ],
+                "type": "text/javascript"
+              }
             }
+          ]
+        },
+        {
+          "name": "GET /reports/daily-volume (200) — org_admin, with from & to",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenOrgAdmin}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/reports/daily-volume?from=2026-01-01T00:00:00.000Z&to=2026-06-01T00:00:00.000Z",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "reports",
+                "daily-volume?from=2026-01-01T00:00:00.000Z&to=2026-06-01T00:00:00.000Z"
+              ]
+            },
+            "description": "Explicit ISO-8601 `from` and `to` (half-open interval [from, to) in the service)."
           },
           "event": [
             {

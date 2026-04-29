@@ -126,15 +126,24 @@ public class JwtUtil {
     }
 
     private boolean audienceMatches(Claims c) {
-        Object aud = c.get("aud");
+        String expected = props.audience();
+        if (expected == null || expected.isBlank()) {
+            return false;
+        }
+        // JJWT 0.12+ immutable Claims: use getAudience() — Map#get("aud") is often null.
+        java.util.Set<String> fromApi = c.getAudience();
+        if (fromApi != null && !fromApi.isEmpty()) {
+            return fromApi.contains(expected);
+        }
+        Object aud = c.get(Claims.AUDIENCE);
         if (aud == null) {
             return false;
         }
         if (aud instanceof String s) {
-            return props.audience().equals(s);
+            return expected.equals(s);
         }
         if (aud instanceof java.util.List<?> l) {
-            return l.contains(props.audience());
+            return l.stream().anyMatch(e -> expected.equals(e != null ? e.toString() : null));
         }
         return false;
     }

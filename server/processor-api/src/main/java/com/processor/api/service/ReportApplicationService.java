@@ -15,6 +15,8 @@ import java.util.List;
 @Service
 public class ReportApplicationService {
 
+    private static final int DAILY_VOLUME_DEFAULT_DAYS = 90;
+
     private final ReportingService reportingService;
     private final DateRangeService dateRangeService;
 
@@ -42,7 +44,7 @@ public class ReportApplicationService {
 
     @Transactional(readOnly = true)
     public List<DailyVolumePointDto> dailyVolume(Instant from, Instant to) {
-        Instant f = dateRangeService.fromOrDefault(from);
+        Instant f = dateRangeService.fromOrDefault(from, DAILY_VOLUME_DEFAULT_DAYS);
         Instant t = dateRangeService.toOrDefault(to);
         if (!f.isBefore(t)) {
             throw new com.processor.core.exception.ProcessingException("VALIDATION", "'from' must be before 'to'");

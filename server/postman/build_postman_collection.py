@@ -407,10 +407,19 @@ reports = [
         tests="""pm.test("HTTP 200", function() { pm.response.to.have.status(200); });""",
     ),
     req(
-        "GET /reports/daily-volume (200) — org_admin",
+        "GET /reports/daily-volume (200) — org_admin, no params",
         "GET",
         f"{B}/api/v1/reports/daily-volume",
         auth="tokenOrgAdmin",
+        desc="Default window: last **90 days** through now when `from` / `to` are omitted.",
+        tests="""pm.test("HTTP 200", function() { pm.response.to.have.status(200); });""",
+    ),
+    req(
+        "GET /reports/daily-volume (200) — org_admin, with from & to",
+        "GET",
+        f"{B}/api/v1/reports/daily-volume?from=2026-01-01T00:00:00.000Z&to=2026-06-01T00:00:00.000Z",
+        auth="tokenOrgAdmin",
+        desc="Explicit ISO-8601 `from` and `to` (half-open interval [from, to) in the service).",
         tests="""pm.test("HTTP 200", function() { pm.response.to.have.status(200); });""",
     ),
     req(
@@ -429,7 +438,12 @@ reports = [
     ),
 ]
 collection["item"].append(
-    folder("4. Reports", "Optional query params: `from`, `to` (ISO-8601 instants).", reports)
+    folder(
+        "4. Reports",
+        "Optional query params: `from`, `to` (ISO-8601 instants). "
+        "`daily-volume` defaults to the **last 90 days** when both are omitted; other report endpoints use a shorter default.",
+        reports,
+    )
 )
 
 # 5. Activity
