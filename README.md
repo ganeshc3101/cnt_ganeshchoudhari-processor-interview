@@ -1,6 +1,42 @@
-# Card Processor
+# Card transaction processor (interview project)
 
-Thank you for taking a the time to complete our interview code project. We realize that there are many ways to conduct the "technical part" of the interview process from L33T code tests to whiteboards, and each has its own respective pros / cons. We intentionally chose the take-home project approach because we believe it gives you the best chance to demonstrate your skills and knowledge in a "normal environment" - i.e. your computer, keyboard, and IDE.
+This repository is a **full-stack** sample implementation of a simplified **card transaction processor**: users sign in, submit or upload transactions, and view **reports** (volume by card brand, by day, etc.) plus **rejected** rows. The system persists data in **PostgreSQL**, applies **card-number validation** and parsing rules in a dedicated **Java domain module**, and serves a **React + TypeScript** SPA that consumes a **JWT-secured** Spring Boot API.
+
+**Start here if you are reviewing or running the solution:**
+
+| Doc | Contents |
+| --- | --- |
+| **[client/README.md](./client/README.md)** | Frontend stack, `npm` workflow, `VITE_*` env, `src/` folder map, auth/API overview, troubleshooting. |
+| **[server/README.md](./server/README.md)** | Maven modules, Java/Spring versions, database bootstrap, `application.yml` env vars, API overview, Postman, troubleshooting. |
+| **[server/scripts/README.md](./server/scripts/README.md)** | Idempotent **`db_setup.sh` / `.ps1`**, SQL pipeline, seeded users/roles, schema design notes. |
+
+**Typical local run (after Postgres is available):**
+
+1. Initialize the database: from `server/`, run `./scripts/db_setup.sh` (or the Windows script — see server scripts README).
+2. Start the API: from `server/`, `mvn -pl processor-api spring-boot:run` (default **http://localhost:9091**).
+3. Start the UI: from `client/`, copy `.env.example` to `.env.local`, `npm install`, `npm run dev` (**http://localhost:5173**). Ensure `VITE_API_BASE_URL` matches the API (e.g. `http://localhost:9091/api`).
+
+---
+
+## Repository layout
+
+```
+.
+├── client/          # Vite + React 18 + TypeScript SPA
+├── server/          # Maven: processor-core (domain) + processor-api (Spring Boot)
+├── data/            # Sample / larger transaction files (per interview brief)
+└── test/            # Smaller fixture files for development (per interview brief)
+```
+
+---
+
+## Interview brief (original instructions)
+
+The sections below are the **original take-home instructions** for this exercise (requirements, submission process, and expectations).
+
+---
+
+Thank you for taking the time to complete our interview code project. We realize that there are many ways to conduct the "technical part" of the interview process from L33T code tests to whiteboards, and each has its own respective pros / cons. We intentionally chose the take-home project approach because we believe it gives you the best chance to demonstrate your skills and knowledge in a "normal environment" - i.e. your computer, keyboard, and IDE.
 
 This short exercise is designed to give us a sense of how you approach full stack development. We’re looking for clarity of thought, communication, and code organization — not perfection or a complete product.
 
@@ -87,7 +123,7 @@ Bonus points (not required) for:
   - Low cyclomatic complexity
   - Low Coupling / High Cohesion
   - Clear thought and patterns for maintainability and expansion
-    - This scenario is obviously simplified from reality, that said you should consider future requests like other transaction types, different file formats, etc. - this will at minimum, be a topic in the conversation
+    - This scenario is obviously simplified from reality, that said, you should consider future requests like other transaction types, different file formats, etc. - this will at minimum, be a topic in the conversation
 - While it should be obvious, this scenario involves "money". This means numerical accuracy is required and at least minimal security should be considered in your submission (we aren't going to "hack your solution", but there shouldn't be open API endpoints either).
 - We do NOT expect you to be a designer, we do expect you to consider your user and make the experience intuitive and easy to use
 
