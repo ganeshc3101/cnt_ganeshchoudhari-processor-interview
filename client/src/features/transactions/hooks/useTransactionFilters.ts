@@ -22,18 +22,16 @@ export type UseTransactionFiltersReturn = {
 export function useTransactionFilters(): UseTransactionFiltersReturn {
   const [rawFilters, setParams] = useUrlState(TransactionFiltersSchema);
 
-  const debouncedQ = useDebouncedValue(rawFilters.q, 300);
   const debouncedMin = useDebouncedValue(rawFilters.minAmount, 300);
   const debouncedMax = useDebouncedValue(rawFilters.maxAmount, 300);
 
   const queryFilters = useMemo<TransactionFilters>(
     () => ({
       ...rawFilters,
-      q: debouncedQ,
       minAmount: debouncedMin,
       maxAmount: debouncedMax,
     }),
-    [rawFilters, debouncedQ, debouncedMin, debouncedMax],
+    [rawFilters, debouncedMin, debouncedMax],
   );
 
   const setFilters = useCallback(
@@ -50,7 +48,6 @@ export function useTransactionFilters(): UseTransactionFiltersReturn {
 
   const resetFilters = useCallback(() => {
     setParams({
-      q: '',
       cardTypes: [],
       from: '',
       to: '',

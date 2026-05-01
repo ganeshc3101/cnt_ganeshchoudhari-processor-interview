@@ -81,7 +81,6 @@ export function TransactionsTableCard() {
   const { data, isLoading, isFetching, isError, refetch } = useTransactions(queryFilters);
 
   const hasActiveFilters =
-    rawFilters.q !== '' ||
     rawFilters.cardTypes.length > 0 ||
     rawFilters.from !== '' ||
     rawFilters.to !== '' ||
@@ -130,7 +129,7 @@ export function TransactionsTableCard() {
   return (
     <Card
       title="Transactions"
-      subtitle="Filter by card type, date range, amount, or search."
+      subtitle="Filter by card type, date range, or amount. The list shows accepted transactions from the server (last 30 days when no dates are set)."
       className={styles.card}
     >
       <TransactionFiltersBar

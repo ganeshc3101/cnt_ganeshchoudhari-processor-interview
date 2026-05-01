@@ -1,24 +1,28 @@
+import { apiMultipartRequest, apiRequest } from '@/shared/api/apiClient';
+import { HttpError, NetworkError } from '@/shared/api/ApiError';
+import { localDateToNextDayStartIso, localDateToStartOfDayIso } from '@/shared/lib/date';
 import { majorToMinor } from '@/shared/lib/money';
 
 import { mockStore } from './mockStore';
 import { classifyCardType } from '../lib/cardType';
-import { parseUploadFile } from '../lib/parseUpload';
 import {
+  BatchUploadResultDtoSchema,
   CARD_TYPES,
+  CardTypeSchema,
   CreateManyResultSchema,
+  TransactionListPageDtoSchema,
   TransactionListResponseSchema,
   TransactionSchema,
-  TransactionSummarySchema,
+  TransactionCreateManyResponseSchema,
   UploadResultSchema,
   type CreateManyResult,
   type CreateTransactionInput,
   type Transaction,
   type TransactionFilters,
   type TransactionListResponse,
-  type TransactionSummary,
+  type TransactionResponseDto,
   type UploadResult,
 } from '../types/transaction';
-
 
 /**
  * Simulated network latency — keeps loading states realistic in the UI and
@@ -45,102 +49,108 @@ function sleep(ms: number, signal?: AbortSignal): Promise<void> {
   });
 }
 
-function toAmountMinor(raw: string): number | null {
-  if (!/^\d+(\.\d{1,2})?$/.test(raw.trim())) return null;
-  return majorToMinor(Number(raw));
+/**
+ * Builds a display-only digit string for masking (first4 / last4). Length is
+ * clamped to 13–19 to satisfy {@link TransactionSchema}.
+ */
+function syntheticPanDigits(first4: string, last4: string): string {
+  const f = first4.replace(/\D/g, '');
+  const l = last4.replace(/\D/g, '');
+  if (f.length + l.length >= 13) {
+    if (f.length + l.length <= 19) return `${f}${l}`;
+    return `${f.slice(0, 4)}${'0'.repeat(11)}${l.slice(-4)}`;
+  }
+  const pad = 13 - f.length - l.length;
+  return `${f}${'0'.repeat(Math.max(0, pad))}${l}`;
 }
 
-function applyFilters(
-  source: ReadonlyArray<Transaction>,
-  filters: Pick<
-    TransactionFilters,
-    'q' | 'cardTypes' | 'from' | 'to' | 'minAmount' | 'maxAmount'
-  >,
-): Transaction[] {
-  const q = filters.q.replace(/\s+/g, '').toLowerCase();
-  const minMinor = filters.minAmount ? toAmountMinor(filters.minAmount) : null;
-  const maxMinor = filters.maxAmount ? toAmountMinor(filters.maxAmount) : null;
-  const fromTs = filters.from ? new Date(`${filters.from}T00:00:00`).getTime() : null;
-  const toTs = filters.to ? new Date(`${filters.to}T23:59:59.999`).getTime() : null;
-
-  const cardTypes = filters.cardTypes;
-  const hasCardTypeFilter = cardTypes.length > 0;
-  const wantsRejected = hasCardTypeFilter && cardTypes.includes('REJECTED');
-  const brandFilters = hasCardTypeFilter
-    ? new Set(cardTypes.filter((type) => type !== 'REJECTED'))
-    : null;
-
-  return source.filter((tx) => {
-    if (hasCardTypeFilter) {
-      const brandMatch = brandFilters && brandFilters.size > 0 && tx.cardType !== null
-        ? brandFilters.has(tx.cardType)
-        : false;
-      const rejectedMatch = wantsRejected && tx.status === 'REJECTED';
-      if (!brandMatch && !rejectedMatch) return false;
-    }
-
-    if (fromTs !== null && new Date(tx.occurredAt).getTime() < fromTs) return false;
-    if (toTs !== null && new Date(tx.occurredAt).getTime() > toTs) return false;
-
-    if (minMinor !== null && tx.amountMinor < minMinor) return false;
-    if (maxMinor !== null && tx.amountMinor > maxMinor) return false;
-
-    if (q.length > 0) {
-      const cardDigits = tx.cardNumber.toLowerCase();
-      const amountText = (tx.amountMinor / 100).toFixed(2);
-      if (!cardDigits.includes(q) && !amountText.includes(q)) return false;
-    }
-
-    return true;
-  });
+function mapApiSource(raw: string): Transaction['source'] {
+  switch (raw.toUpperCase()) {
+    case 'BATCH':
+      return 'UPLOAD';
+    case 'MANUAL':
+      return 'MANUAL';
+    case 'SEED':
+      return 'SEED';
+    default:
+      return 'MANUAL';
+  }
 }
 
-function buildSummary(transactions: ReadonlyArray<Transaction>): TransactionSummary {
-  const totalCount = transactions.length;
-  const accepted = transactions.filter((tx) => tx.status === 'ACCEPTED');
-  const rejected = transactions.filter((tx) => tx.status === 'REJECTED');
-  const totalVolumeMinor = accepted.reduce((sum, tx) => sum + tx.amountMinor, 0);
-  const averageVolumeMinor =
-    accepted.length === 0 ? 0 : Math.round(totalVolumeMinor / accepted.length);
-
-  const byDayMap = new Map<string, { count: number; volumeMinor: number }>();
-  accepted.forEach((tx) => {
-    const day = tx.occurredAt.slice(0, 10);
-    const existing = byDayMap.get(day) ?? { count: 0, volumeMinor: 0 };
-    existing.count += 1;
-    existing.volumeMinor += tx.amountMinor;
-    byDayMap.set(day, existing);
-  });
-  const byDay = Array.from(byDayMap.entries())
-    .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
-    .map(([date, stats]) => ({ date, ...stats }));
-
-  const byCardTypeMap = new Map<string, { count: number; volumeMinor: number }>();
-  [...CARD_TYPES, 'REJECTED' as const].forEach((key) =>
-    byCardTypeMap.set(key, { count: 0, volumeMinor: 0 }),
-  );
-  transactions.forEach((tx) => {
-    const key = tx.status === 'REJECTED' ? 'REJECTED' : tx.cardType ?? 'REJECTED';
-    const existing = byCardTypeMap.get(key) ?? { count: 0, volumeMinor: 0 };
-    existing.count += 1;
-    existing.volumeMinor += tx.amountMinor;
-    byCardTypeMap.set(key, existing);
-  });
-  const byCardType = Array.from(byCardTypeMap.entries()).map(([cardType, stats]) => ({
-    cardType: cardType as TransactionSummary['byCardType'][number]['cardType'],
-    ...stats,
-  }));
-
-  return {
-    totalCount,
-    acceptedCount: accepted.length,
-    rejectedCount: rejected.length,
-    totalVolumeMinor,
-    averageVolumeMinor,
-    currency: 'USD',
-    byDay,
-    byCardType,
+function listRowFromDto(dto: TransactionResponseDto): Transaction {
+  const currencyRaw = dto.currency.trim().toUpperCase();
+  const currency = currencyRaw.length === 3 ? currencyRaw : 'USD';
+  const nameRaw = dto.cardholderName;
+  const cardholderName =
+    nameRaw !== undefined && nameRaw !== null && nameRaw.trim() !== '' ? nameRaw.trim() : null;
+  const row = {
+    id: dto.id,
+    cardholderName,
+    cardNumber: syntheticPanDigits(dto.cardFirst4, dto.cardLast4),
+    cardType: CardTypeSchema.parse(dto.cardBrand.toUpperCase()),
+    amountMinor: majorToMinor(dto.amount),
+    currency,
+    occurredAt: new Date(dto.occurredAt).toISOString(),
+    status: 'ACCEPTED' as const,
+    rejectionReason: null,
+    source: mapApiSource(dto.source),
   };
+  return TransactionSchema.parse(row);
+}
+
+function batchUploadFormat(fileName: string): 'csv' | 'json' | null {
+  const ext = fileName.split('.').pop()?.toLowerCase() ?? '';
+  if (ext === 'json') return 'json';
+  if (ext === 'csv') return 'csv';
+  return null;
+}
+
+function uploadFailureMessage(cause: unknown): string {
+  if (cause instanceof HttpError) {
+    const b = cause.body;
+    if (
+      b &&
+      typeof b === 'object' &&
+      'message' in b &&
+      typeof (b as { message: unknown }).message === 'string'
+    ) {
+      return (b as { message: string }).message;
+    }
+    return `Upload failed (HTTP ${cause.status}).`;
+  }
+  if (cause instanceof NetworkError) {
+    return 'Network error. Check your connection and try again.';
+  }
+  return 'Upload failed.';
+}
+
+function buildListQuery(
+  filters: TransactionFilters,
+): Record<string, string | number | boolean | readonly string[] | undefined> {
+  const brandsOnly = filters.cardTypes.filter((c) => c !== 'REJECTED');
+  const query: Record<string, string | number | boolean | readonly string[] | undefined> = {
+    page: filters.page - 1,
+    size: filters.pageSize,
+  };
+
+  const fromDay = filters.from.trim();
+  const toDay = filters.to.trim();
+  if (fromDay !== '') query.from = localDateToStartOfDayIso(fromDay);
+  if (toDay !== '') query.to = localDateToNextDayStartIso(toDay);
+
+  const allSelected =
+    brandsOnly.length === CARD_TYPES.length &&
+    CARD_TYPES.every((b) => brandsOnly.includes(b));
+  if (brandsOnly.length > 0 && !allSelected) {
+    query.cardBrands = brandsOnly.map((b) => b.toUpperCase());
+  }
+
+  const minT = filters.minAmount.trim();
+  const maxT = filters.maxAmount.trim();
+  if (minT !== '') query.minAmount = minT;
+  if (maxT !== '') query.maxAmount = maxT;
+
+  return query;
 }
 
 function createFromInput(input: CreateTransactionInput): Transaction {
@@ -167,39 +177,41 @@ function createFromInput(input: CreateTransactionInput): Transaction {
 }
 
 /**
- * Public service. Mirrors the eventual server surface 1:1 so swapping the
- * mock store for `apiRequest(...)` calls is a local change only.
+ * Public service. List, batch file upload, and manual multi-create use the processor API;
+ * single create remains mock-backed.
  *
- * Future wiring:
- *   list:    apiRequest({ method:'GET',  path:'/transactions', query, schema: TransactionListResponseSchema })
- *   summary: apiRequest({ method:'GET',  path:'/transactions/summary', schema: TransactionSummarySchema })
- *   create:  apiRequest({ method:'POST', path:'/transactions', body, schema: TransactionSchema })
- *   upload:  apiRequest({ method:'POST', path:'/transactions/uploads', body: FormData, schema: UploadResultSchema })
+ * Dashboard summary charts use `fetchDashboardSummary` in `reportsService.ts`.
  */
 export const transactionsService = {
   async list(
     filters: TransactionFilters,
     signal?: AbortSignal,
   ): Promise<TransactionListResponse> {
-    await sleep(SIMULATED_LATENCY_MS, signal);
+    const brandsOnly = filters.cardTypes.filter((c) => c !== 'REJECTED');
+    const onlyRejected = filters.cardTypes.length > 0 && brandsOnly.length === 0;
+    if (onlyRejected) {
+      return TransactionListResponseSchema.parse({
+        items: [],
+        total: 0,
+        page: filters.page,
+        pageSize: filters.pageSize,
+      });
+    }
 
-    const filtered = applyFilters(mockStore.snapshot(), filters);
-    const total = filtered.length;
-    const page = Math.max(1, filters.page);
-    const pageSize = Math.max(1, filters.pageSize);
-    const start = (page - 1) * pageSize;
-    const items = filtered
-      .slice()
-      .sort((a, b) => (a.occurredAt < b.occurredAt ? 1 : -1))
-      .slice(start, start + pageSize);
+    const pageDto = await apiRequest({
+      method: 'GET',
+      path: '/v1/transactions',
+      query: buildListQuery(filters),
+      schema: TransactionListPageDtoSchema,
+      ...(signal !== undefined ? { signal } : {}),
+    });
 
-    return TransactionListResponseSchema.parse({ items, total, page, pageSize });
-  },
-
-  async summary(signal?: AbortSignal): Promise<TransactionSummary> {
-    await sleep(SIMULATED_LATENCY_MS, signal);
-    const summary = buildSummary(mockStore.snapshot());
-    return TransactionSummarySchema.parse(summary);
+    return TransactionListResponseSchema.parse({
+      items: pageDto.content.map(listRowFromDto),
+      total: pageDto.totalElements,
+      page: pageDto.page + 1,
+      pageSize: pageDto.size,
+    });
   },
 
   async create(input: CreateTransactionInput): Promise<Transaction> {
@@ -210,38 +222,78 @@ export const transactionsService = {
   },
 
   async createMany(inputs: ReadonlyArray<CreateTransactionInput>): Promise<CreateManyResult> {
-    await sleep(SIMULATED_LATENCY_MS);
-    const created = inputs.map(createFromInput);
-    if (created.length > 0) mockStore.addMany(created);
-    const accepted = created.filter((tx) => tx.status === 'ACCEPTED').length;
-    const rejected = created.length - accepted;
-    return CreateManyResultSchema.parse({ accepted, rejected, created });
-  },
-
-  async uploadFiles(files: ReadonlyArray<File>): Promise<UploadResult> {
-    await sleep(SIMULATED_LATENCY_MS);
-    const all = await Promise.all(files.map(parseUploadFile));
-
-    const accepted: Transaction[] = [];
-    const rejected: Transaction[] = [];
-    const errorEntries: UploadResult['errors'] = [];
-
-    all.forEach((outcome, idx) => {
-      accepted.push(...outcome.accepted);
-      rejected.push(...outcome.rejected);
-      outcome.errors.forEach((message) => {
-        errorEntries.push({ file: files[idx]?.name ?? 'unknown', message });
-      });
-    });
-
-    if (accepted.length + rejected.length > 0) {
-      mockStore.addMany([...accepted, ...rejected]);
+    if (inputs.length === 0) {
+      return CreateManyResultSchema.parse({ accepted: 0, rejected: 0, created: [] });
     }
 
-    return UploadResultSchema.parse({
-      accepted: accepted.length,
-      rejected: rejected.length,
-      errors: errorEntries,
+    const body = inputs.map((input) => {
+      const row: Record<string, string | number> = {
+        cardNumber: input.cardNumber.replace(/\D/g, ''),
+        amount: Number(input.amountMajor),
+        currency: 'USD',
+      };
+      const name = input.cardholderName?.trim();
+      if (name !== undefined && name.length > 0) {
+        row.cardholderName = name;
+      }
+      if (input.occurredAt !== undefined && input.occurredAt.trim() !== '') {
+        row.timestamp = input.occurredAt;
+      }
+      return row;
     });
+
+    const dtos = await apiRequest({
+      method: 'POST',
+      path: '/v1/transactions',
+      body,
+      schema: TransactionCreateManyResponseSchema,
+    });
+
+    const created = dtos.map((dto) => listRowFromDto(dto));
+    return CreateManyResultSchema.parse({
+      accepted: created.length,
+      rejected: 0,
+      created,
+    });
+  },
+
+  async uploadFiles(files: ReadonlyArray<File>, signal?: AbortSignal): Promise<UploadResult> {
+    let accepted = 0;
+    let rejected = 0;
+    const errors: UploadResult['errors'] = [];
+
+    for (const file of files) {
+      if (signal?.aborted) {
+        throw new DOMException('Aborted', 'AbortError');
+      }
+
+      const format = batchUploadFormat(file.name);
+      if (format === null) {
+        errors.push({
+          file: file.name,
+          message: 'Only CSV and JSON files are supported for batch upload.',
+        });
+        continue;
+      }
+
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('format', format);
+
+      try {
+        const batch = await apiMultipartRequest({
+          path: '/v1/transactions/batch',
+          formData,
+          schema: BatchUploadResultDtoSchema,
+          ...(signal !== undefined ? { signal } : {}),
+        });
+        accepted += batch.acceptedRows;
+        rejected += batch.rejectedRows;
+      } catch (e: unknown) {
+        errors.push({ file: file.name, message: uploadFailureMessage(e) });
+      }
+    }
+
+    return UploadResultSchema.parse({ accepted, rejected, errors });
   },
 };

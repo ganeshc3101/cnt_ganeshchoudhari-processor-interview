@@ -2,6 +2,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useState, type ChangeEvent } from 'react';
 import { Controller, useFieldArray, useForm } from 'react-hook-form';
 
+import { userFacingApiMessage } from '@/features/auth/lib/loginErrorMessage';
 import { Button } from '@/shared/ui/Button';
 import { DatePicker } from '@/shared/ui/DatePicker';
 import { PlusIcon, TrashIcon } from '@/shared/ui/icons';
@@ -236,22 +237,14 @@ export function ManualEntryTab() {
 
         {create.isError ? (
           <p role="alert" className={styles.errorText}>
-            {create.error.message}
+            {userFacingApiMessage(create.error, 'Could not create transactions.')}
           </p>
         ) : null}
 
         {lastResult ? (
           <p role="status" className={styles.successText}>
-            Added {lastResult.accepted + lastResult.rejected} transaction
-            {lastResult.accepted + lastResult.rejected === 1 ? '' : 's'}:{' '}
-            <strong>{lastResult.accepted} accepted</strong>
-            {lastResult.rejected > 0 ? (
-              <>
-                {', '}
-                <strong>{lastResult.rejected} rejected</strong>
-              </>
-            ) : null}
-            .
+            Successfully added <strong>{lastResult.accepted}</strong> transaction
+            {lastResult.accepted === 1 ? '' : 's'}.
           </p>
         ) : null}
       </div>

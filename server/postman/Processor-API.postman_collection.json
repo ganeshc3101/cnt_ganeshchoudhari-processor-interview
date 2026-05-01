@@ -610,10 +610,10 @@
     },
     {
       "name": "2. Transactions",
-      "description": "Manual create, get by id, list. **Requires `lastTransactionId` from the first request.**",
+      "description": "Manual create (POST body = JSON **array** of txn objects), get by id, list. **Requires `lastTransactionId` from the create request.**",
       "item": [
         {
-          "name": "POST /transactions — create manual (201)",
+          "name": "POST /transactions — create manual (201) JSON array",
           "request": {
             "method": "POST",
             "header": [
@@ -637,10 +637,10 @@
                 "transactions"
               ]
             },
-            "description": "Requires `TRANSACTIONS_WRITE`. Saves `lastTransactionId` for the next request.",
+            "description": "Requires `TRANSACTIONS_WRITE`. Body must be a **non-empty JSON array** of transaction objects. Saves `lastTransactionId` from the first created row (for GET-by-id next).",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"cardholderName\": \"Postman Test\",\n  \"cardNumber\": \"4111111111111111\",\n  \"amount\": 25.5,\n  \"currency\": \"USD\"\n}",
+              "raw": "[\n  {\n    \"cardholderName\": \"Postman Test\",\n    \"cardNumber\": \"4111111111111111\",\n    \"amount\": 25.5,\n    \"currency\": \"USD\"\n  }\n]",
               "options": {
                 "raw": {
                   "language": "json"
@@ -655,8 +655,59 @@
                 "exec": [
                   "pm.test(\"HTTP 201\", function() { pm.response.to.have.status(201); });",
                   "var j = pm.response.json();",
-                  "pm.collectionVariables.set(\"lastTransactionId\", j.id);",
-                  "pm.test(\"masked PAN\", function() { pm.expect(j).to.have.property(\"cardLast4\"); });"
+                  "pm.test(\"array response\", function() { pm.expect(j).to.be.an(\"array\").that.is.not.empty; });",
+                  "pm.collectionVariables.set(\"lastTransactionId\", j[0].id);",
+                  "pm.test(\"masked PAN\", function() { pm.expect(j[0]).to.have.property(\"cardLast4\"); });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /transactions — create manual bulk 2 rows (201)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAdmin}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/transactions",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "transactions"
+              ]
+            },
+            "description": "Creates two accepted transactions in one request; rolls back entirely if any row fails validation or processing.",
+            "body": {
+              "mode": "raw",
+              "raw": "[\n  {\n    \"cardholderName\": \"Postman Test\",\n    \"cardNumber\": \"4111111111111111\",\n    \"amount\": 25.5,\n    \"currency\": \"USD\"\n  },\n  {\n    \"cardholderName\": \"Postman Bulk 2\",\n    \"cardNumber\": \"5555555555554444\",\n    \"amount\": 10.0,\n    \"currency\": \"USD\"\n  }\n]",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"HTTP 201\", function() { pm.response.to.have.status(201); });",
+                  "var j = pm.response.json();",
+                  "pm.test(\"two created\", function() { pm.expect(j).to.be.an(\"array\").with.lengthOf(2); });"
                 ],
                 "type": "text/javascript"
               }
@@ -691,7 +742,7 @@
             "description": "`cardNumber` must be 12–19 digits.",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"cardholderName\": \"Postman Test\",\n  \"cardNumber\": \"41\",\n  \"amount\": 25.5,\n  \"currency\": \"USD\"\n}",
+              "raw": "[\n  {\n    \"cardholderName\": \"Postman Test\",\n    \"cardNumber\": \"41\",\n    \"amount\": 25.5,\n    \"currency\": \"USD\"\n  }\n]",
               "options": {
                 "raw": {
                   "language": "json"
@@ -706,6 +757,50 @@
                 "exec": [
                   "pm.test(\"HTTP 400\", function() { pm.response.to.have.status(400); });",
                   "pm.test(\"code\", function() { pm.expect(pm.response.json().code).to.equal(\"VALIDATION_ERROR\"); });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /transactions — NEG: empty array (400)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAdmin}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/transactions",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "transactions"
+              ]
+            },
+            "description": "Body must be a non-empty JSON array.",
+            "body": {
+              "mode": "raw",
+              "raw": "[]",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"HTTP 400\", function() { pm.response.to.have.status(400); });"
                 ],
                 "type": "text/javascript"
               }
@@ -850,7 +945,7 @@
             "description": "ANALYST has no `TRANSACTIONS_WRITE`.",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"cardholderName\": \"Postman Test\",\n  \"cardNumber\": \"4111111111111111\",\n  \"amount\": 25.5,\n  \"currency\": \"USD\"\n}",
+              "raw": "[\n  {\n    \"cardholderName\": \"Postman Test\",\n    \"cardNumber\": \"4111111111111111\",\n    \"amount\": 25.5,\n    \"currency\": \"USD\"\n  }\n]",
               "options": {
                 "raw": {
                   "language": "json"
@@ -899,7 +994,7 @@
             "description": "VIEWER has no `TRANSACTIONS_WRITE`.",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"cardholderName\": \"Postman Test\",\n  \"cardNumber\": \"4111111111111111\",\n  \"amount\": 25.5,\n  \"currency\": \"USD\"\n}",
+              "raw": "[\n  {\n    \"cardholderName\": \"Postman Test\",\n    \"cardNumber\": \"4111111111111111\",\n    \"amount\": 25.5,\n    \"currency\": \"USD\"\n  }\n]",
               "options": {
                 "raw": {
                   "language": "json"

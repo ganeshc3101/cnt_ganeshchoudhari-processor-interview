@@ -105,7 +105,6 @@ export const CardTypeFiltersSchema = z
   });
 
 export const TransactionFiltersSchema = z.object({
-  q: z.string().trim().default(''),
   cardTypes: CardTypeFiltersSchema,
   from: z.string().default(''),
   to: z.string().default(''),
@@ -115,6 +114,35 @@ export const TransactionFiltersSchema = z.object({
   pageSize: z.coerce.number().int().min(5).max(100).default(10),
 });
 export type TransactionFilters = z.infer<typeof TransactionFiltersSchema>;
+
+/** GET /v1/transactions row shape — validated before mapping to {@link Transaction}. */
+export const TransactionResponseDtoSchema = z.object({
+  id: z.string().uuid(),
+  batchId: z.string().nullable().optional(),
+  source: z.string(),
+  cardFirst4: z.string(),
+  cardLast4: z.string(),
+  cardBrand: z.string(),
+  /** Omitted in JSON when null (e.g. many batch-imported rows). */
+  cardholderName: z.string().nullish(),
+  amount: z.coerce.number(),
+  currency: z.string(),
+  occurredAt: z.string(),
+  createdAt: z.string(),
+});
+
+export type TransactionResponseDto = z.infer<typeof TransactionResponseDtoSchema>;
+
+/** POST /v1/transactions — response body is a JSON array of created rows. */
+export const TransactionCreateManyResponseSchema = z.array(TransactionResponseDtoSchema);
+
+export const TransactionListPageDtoSchema = z.object({
+  content: z.array(TransactionResponseDtoSchema),
+  page: z.number().int().nonnegative(),
+  size: z.number().int().positive(),
+  totalElements: z.coerce.number().int().nonnegative(),
+  totalPages: z.number().int().nonnegative(),
+});
 
 export const TransactionListResponseSchema = z.object({
   items: z.array(TransactionSchema),
@@ -154,3 +182,13 @@ export const UploadResultSchema = z.object({
   errors: z.array(z.object({ file: z.string(), message: z.string() })),
 });
 export type UploadResult = z.infer<typeof UploadResultSchema>;
+
+/** POST /v1/transactions/batch response (202). */
+export const BatchUploadResultDtoSchema = z.object({
+  batchId: z.string(),
+  totalRows: z.coerce.number().int().nonnegative(),
+  acceptedRows: z.coerce.number().int().nonnegative(),
+  rejectedRows: z.coerce.number().int().nonnegative(),
+  status: z.string(),
+});
+export type BatchUploadResultDto = z.infer<typeof BatchUploadResultDtoSchema>;

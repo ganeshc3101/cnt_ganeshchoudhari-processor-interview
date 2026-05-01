@@ -1,26 +1,46 @@
 import { z } from 'zod';
 
+export const UserMeSchema = z.object({
+  id: z.string(),
+  username: z.string(),
+  email: z.string(),
+  firstName: z.string().nullable().optional(),
+  lastName: z.string().nullable().optional(),
+  displayName: z.string().nullable().optional(),
+  status: z.string(),
+  roleCodes: z.array(z.string()),
+  permissionCodes: z.array(z.string()),
+});
+
+export type UserMe = z.infer<typeof UserMeSchema>;
+
+export const AuthLoginResponseSchema = z.object({
+  tokenType: z.string(),
+  accessToken: z.string(),
+  expiresIn: z.coerce.number(),
+});
+
+export type AuthLoginResponse = z.infer<typeof AuthLoginResponseSchema>;
+
 /**
- * Session represents the authenticated identity known to the client.
- *
- * It deliberately carries NO sensitive tokens. Real credentials live in
- * HttpOnly cookies set by the server and are never exposed to JavaScript.
+ * Authenticated session for the client — public user profile only (no tokens).
  */
 export const SessionSchema = z.object({
   authenticated: z.literal(true),
-  userId: z.string().min(1),
+  user: UserMeSchema,
 });
 
 export type Session = z.infer<typeof SessionSchema>;
 
 /**
- * Login form schema. Kept deliberately permissive at the form layer —
- * the server owns the real credential policy. We only enforce that
- * required fields are present so UX can short-circuit obvious mistakes.
+ * Login form — password length matches backend `AuthRequestDto` (min 12).
  */
 export const LoginFormSchema = z.object({
   username: z.string().trim().min(1, 'Username is required.'),
-  password: z.string().min(1, 'Password is required.'),
+  password: z
+    .string()
+    .min(12, 'Password must be at least 12 characters.')
+    .max(128, 'Password must be at most 128 characters.'),
   rememberMe: z.boolean(),
 });
 

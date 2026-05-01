@@ -27,6 +27,7 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.Clock;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
@@ -67,8 +68,19 @@ public class TransactionApplicationService {
         this.dateRangeService = dateRangeService;
     }
 
+    /**
+     * Creates one or more manual transactions in a single transaction (all succeed or all roll back).
+     */
     @Transactional
-    public TransactionResponseDto createManual(TransactionRequestDto request) {
+    public List<TransactionResponseDto> createManualMany(List<TransactionRequestDto> requests) {
+        List<TransactionResponseDto> created = new ArrayList<>(requests.size());
+        for (TransactionRequestDto request : requests) {
+            created.add(createManualOne(request));
+        }
+        return created;
+    }
+
+    private TransactionResponseDto createManualOne(TransactionRequestDto request) {
         UUID userId = SecurityUtils.currentUserId().orElseThrow(() -> new ProcessingException("AUTH", "Not authenticated"));
         var cmd = new NewTransactionCommand(
                 null,

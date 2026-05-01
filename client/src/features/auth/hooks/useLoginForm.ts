@@ -4,6 +4,7 @@ import { useForm, type UseFormReturn } from 'react-hook-form';
 import { useLocation, useNavigate } from 'react-router-dom';
 
 import { useAuth } from '@/app/providers/AuthProvider';
+import { loginErrorMessage } from '@/features/auth/lib/loginErrorMessage';
 import { paths } from '@/routes/paths';
 
 import { LoginFormSchema, type LoginFormValues } from '../types/auth';
@@ -34,17 +35,15 @@ export function useLoginForm(): UseLoginFormReturn {
     },
   });
 
-  const onSubmit = form.handleSubmit(async () => {
+  const onSubmit = form.handleSubmit(async (values) => {
     setSubmitError(null);
     try {
-      // Mock auth: the service currently ignores credentials. The form shape
-      // is already correct for the future `signIn(values)` signature.
-      await signIn();
+      await signIn(values);
       const state = location.state as LocationState;
-      const redirectTo = state?.from?.pathname ?? paths.dashboard;
+      const redirectTo = state?.from?.pathname ?? paths.root;
       navigate(redirectTo, { replace: true });
-    } catch (err) {
-      setSubmitError(err instanceof Error ? err : new Error('Sign-in failed.'));
+    } catch (err: unknown) {
+      setSubmitError(new Error(loginErrorMessage(err)));
     }
   });
 

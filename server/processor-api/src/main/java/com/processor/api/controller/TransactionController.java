@@ -6,6 +6,7 @@ import com.processor.api.dto.TransactionRequestDto;
 import com.processor.api.dto.TransactionResponseDto;
 import com.processor.api.service.TransactionApplicationService;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotEmpty;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -37,8 +38,10 @@ public class TransactionController {
 
     @PostMapping
     @PreAuthorize("hasAuthority('TRANSACTIONS_WRITE')")
-    public ResponseEntity<TransactionResponseDto> create(@Valid @RequestBody TransactionRequestDto request) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(transactionApplicationService.createManual(request));
+    public ResponseEntity<List<TransactionResponseDto>> create(
+            @Valid @RequestBody @NotEmpty List<@Valid TransactionRequestDto> requests) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(transactionApplicationService.createManualMany(requests));
     }
 
     @GetMapping("/{id}")

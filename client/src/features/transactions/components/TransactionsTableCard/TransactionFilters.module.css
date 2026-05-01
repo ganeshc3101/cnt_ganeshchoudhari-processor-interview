@@ -6,27 +6,14 @@
   max-width: 100%;
 }
 
-.searchRow {
+.topRow {
   display: grid;
   gap: var(--space-3);
   grid-template-columns: minmax(0, 1fr);
 }
 
-@media (min-width: 768px) {
-  .searchRow {
-    grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
-  }
-}
-
-.searchField,
 .cardTypeField {
   min-width: 0;
-}
-
-.searchIcon {
-  display: inline-flex;
-  align-items: center;
-  color: var(--color-fg-muted);
 }
 
 .rangeRow {

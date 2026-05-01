@@ -34,6 +34,13 @@
   height: var(--app-header-h);
 }
 
+.headerStart {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  min-width: 0;
+}
+
 .brand {
   display: inline-flex;
   align-items: center;
@@ -69,11 +76,33 @@
   border: 1px solid var(--color-border);
   border-radius: var(--radius-full);
   min-width: 0;
+  text-decoration: none;
+  color: inherit;
+  cursor: pointer;
+  transition:
+    background var(--duration-fast) var(--ease-standard),
+    border-color var(--duration-fast) var(--ease-standard),
+    box-shadow var(--duration-fast) var(--ease-standard);
+}
+
+.userChip:hover {
+  background: color-mix(in srgb, var(--color-bg-surface-alt) 85%, var(--color-primary-500));
+  border-color: color-mix(in srgb, var(--color-border) 70%, var(--color-primary-500));
+}
+
+.userChip:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 2px;
 }
 
 @media (max-width: 480px) {
   .userChip {
     padding: 0;
+    background: transparent;
+    border-color: transparent;
+  }
+
+  .userChip:hover {
     background: transparent;
     border-color: transparent;
   }

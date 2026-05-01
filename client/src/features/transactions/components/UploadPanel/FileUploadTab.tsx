@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 
+import { userFacingApiMessage } from '@/features/auth/lib/loginErrorMessage';
 import { Button } from '@/shared/ui/Button';
 import { FileDropzone } from '@/shared/ui/FileDropzone';
 import { FileIcon, TrashIcon, UploadIcon } from '@/shared/ui/icons';
@@ -7,11 +8,10 @@ import { FileIcon, TrashIcon, UploadIcon } from '@/shared/ui/icons';
 import styles from './FileUploadTab.module.css';
 import { useUploadTransactions } from '../../hooks/useUploadTransactions';
 
-
 const MAX_FILES = 5;
 const MAX_BYTES = 5 * 1024 * 1024;
-const ACCEPTED = '.csv,.json,.xml';
-const ACCEPTED_EXTS = ['csv', 'json', 'xml'];
+const ACCEPTED = '.csv,.json';
+const ACCEPTED_EXTS = ['csv', 'json'];
 
 type ResultMessage =
   | { kind: 'success'; accepted: number; rejected: number; errors: string[] }
@@ -29,7 +29,8 @@ export function FileUploadTab() {
   const upload = useUploadTransactions();
 
   const helperText = useMemo(
-    () => `CSV, JSON, or XML · up to ${MAX_FILES} files · ${formatBytes(MAX_BYTES)} max each`,
+    () =>
+      `CSV or JSON (server batch format) · up to ${MAX_FILES} files · ${formatBytes(MAX_BYTES)} max each · one API request per file`,
     [],
   );
 
@@ -69,9 +70,12 @@ export function FileUploadTab() {
         });
         setQueued([]);
       },
-      onError: (err) => setResult({ kind: 'error', message: err.message }),
+      onError: (err) =>
+        setResult({ kind: 'error', message: userFacingApiMessage(err, 'Upload failed.') }),
     });
   };
+
+  const totalProcessed = result?.kind === 'success' ? result.accepted + result.rejected : 0;
 
   return (
     <div className={styles.root}>
@@ -128,10 +132,20 @@ export function FileUploadTab() {
 
       {result?.kind === 'success' ? (
         <div className={styles.successBox} role="status">
-          Processed {result.accepted + result.rejected} record
-          {result.accepted + result.rejected === 1 ? '' : 's'}:{' '}
-          <strong>{result.accepted} accepted</strong>
-          {result.rejected > 0 ? <>, <strong>{result.rejected} rejected</strong></> : null}.
+          {totalProcessed === 0 && result.errors.length > 0 ? (
+            <p className={styles.summaryMuted}>No rows were processed.</p>
+          ) : (
+            <p>
+              Processed {totalProcessed} record
+              {totalProcessed === 1 ? '' : 's'}: <strong>{result.accepted} accepted</strong>
+              {result.rejected > 0 ? (
+                <>
+                  , <strong>{result.rejected} rejected</strong>
+                </>
+              ) : null}
+              .
+            </p>
+          )}
           {result.errors.length > 0 ? (
             <ul className={styles.errorList}>
               {result.errors.slice(0, 5).map((message, i) => (

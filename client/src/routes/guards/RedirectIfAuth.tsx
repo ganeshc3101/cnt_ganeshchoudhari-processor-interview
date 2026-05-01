@@ -1,9 +1,9 @@
-import { Navigate, Outlet } from 'react-router-dom';
+import { Outlet } from 'react-router-dom';
 
 import { useAuth } from '@/app/providers/AuthProvider';
 import { PageSkeleton } from '@/shared/ui/Skeleton';
 
-import { paths } from '../paths';
+import { DefaultRedirect } from '../DefaultRedirect';
 
 export function RedirectIfAuth() {
   const { session, isLoading } = useAuth();
@@ -11,7 +11,7 @@ export function RedirectIfAuth() {
   if (isLoading) return <PageSkeleton />;
 
   if (session) {
-    return <Navigate to={paths.dashboard} replace />;
+    return <DefaultRedirect />;
   }
 
   return <Outlet />;

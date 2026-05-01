@@ -1,12 +1,11 @@
 import { useQuery } from '@tanstack/react-query';
 
 import { transactionsKeys } from './queryKeys';
-import { transactionsService } from '../services/transactionsService';
-
+import { fetchDashboardSummary } from '../services/reportsService';
 
 export function useTransactionSummary() {
   return useQuery({
     queryKey: transactionsKeys.summary(),
-    queryFn: ({ signal }) => transactionsService.summary(signal),
+    queryFn: ({ signal }) => fetchDashboardSummary(signal),
   });
 }

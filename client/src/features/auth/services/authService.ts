@@ -1,54 +1,91 @@
-import { SessionSchema, type Session } from '../types/auth';
+import { z } from 'zod';
 
-const SESSION_STORAGE_KEY = 'auth:session';
+import { apiRequest } from '@/shared/api/apiClient';
+import { HttpError } from '@/shared/api/ApiError';
 
-/**
- * Authentication service — mock foundation.
- *
- * The API surface (`getSession` / `signIn` / `signOut`) is intentionally shaped
- * so the implementation can later be replaced with a real HttpOnly-cookie +
- * `GET /auth/session` flow without changing any consumer (provider, hooks,
- * components).
- *
- * The stored object carries NO sensitive tokens — only a non-sensitive
- * identity flag. Real tokens MUST live in HttpOnly cookies set by the server.
- */
-
-const readStored = (): Session | null => {
-  try {
-    const raw = localStorage.getItem(SESSION_STORAGE_KEY);
-    if (!raw) return null;
-    const parsed = SessionSchema.safeParse(JSON.parse(raw));
-    return parsed.success ? parsed.data : null;
-  } catch {
-    return null;
-  }
-};
-
-const writeStored = (session: Session): void => {
-  localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(session));
-};
-
-const clearStored = (): void => {
-  localStorage.removeItem(SESSION_STORAGE_KEY);
-};
+import {
+  clearAccessToken,
+  clearLegacyMockSession,
+  getAccessToken,
+  setAccessToken,
+} from '../lib/authTokenStorage';
+import { isJwtLikelyExpired } from '../lib/jwt';
+import {
+  AuthLoginResponseSchema,
+  LoginFormSchema,
+  UserMeSchema,
+  type LoginFormValues,
+  type UserMe,
+} from '../types/auth';
 
 export const authService = {
-  async getSession(): Promise<Session | null> {
-    // TODO: replace with `GET /auth/session` (HttpOnly cookie-based).
-    return readStored();
+  async getStoredSessionUser(signal?: AbortSignal): Promise<UserMe | null> {
+    clearLegacyMockSession();
+    const token = getAccessToken();
+    if (!token) return null;
+    if (isJwtLikelyExpired(token, 60)) {
+      clearAccessToken();
+      return null;
+    }
+    try {
+      return await apiRequest({
+        method: 'GET',
+        path: '/v1/auth/me',
+        schema: UserMeSchema,
+        ...(signal !== undefined ? { signal } : {}),
+      });
+    } catch (e: unknown) {
+      if (e instanceof HttpError && e.status === 401) {
+        clearAccessToken();
+      }
+      return null;
+    }
   },
 
-  async signIn(): Promise<Session> {
-    // TODO: replace with `POST /auth/sign-in` — server sets an HttpOnly cookie
-    // and returns the public session identity.
-    const session: Session = { authenticated: true, userId: 'dev-user' };
-    writeStored(session);
-    return session;
+  async login(values: LoginFormValues, signal?: AbortSignal): Promise<UserMe> {
+    const parsed = LoginFormSchema.parse(values);
+    const auth = await apiRequest({
+      method: 'POST',
+      path: '/v1/auth/login',
+      body: {
+        username: parsed.username,
+        password: parsed.password,
+      },
+      schema: AuthLoginResponseSchema,
+      skipUnauthorizedRedirect: true,
+      ...(signal !== undefined ? { signal } : {}),
+    });
+    setAccessToken(auth.accessToken, parsed.rememberMe);
+    return apiRequest({
+      method: 'GET',
+      path: '/v1/auth/me',
+      schema: UserMeSchema,
+      ...(signal !== undefined ? { signal } : {}),
+    });
   },
 
-  async signOut(): Promise<void> {
-    // TODO: replace with `POST /auth/sign-out` — server clears the cookie.
-    clearStored();
+  async fetchMe(signal?: AbortSignal): Promise<UserMe> {
+    return apiRequest({
+      method: 'GET',
+      path: '/v1/auth/me',
+      schema: UserMeSchema,
+      ...(signal !== undefined ? { signal } : {}),
+    });
+  },
+
+  async signOut(signal?: AbortSignal): Promise<void> {
+    try {
+      await apiRequest({
+        method: 'POST',
+        path: '/v1/auth/logout',
+        schema: z.undefined(),
+        skipUnauthorizedRedirect: true,
+        ...(signal !== undefined ? { signal } : {}),
+      });
+    } catch {
+      /* best-effort — always clear locally */
+    } finally {
+      clearAccessToken();
+    }
   },
 };

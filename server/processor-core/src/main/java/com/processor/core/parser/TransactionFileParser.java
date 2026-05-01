@@ -80,13 +80,12 @@ public final class TransactionFileParser {
         } catch (NumberFormatException e) {
             throw new ProcessingException("PARSE_ERROR", "Line " + rowNumber + ": bad amount: " + amountStr);
         }
-        Instant occurred = Instant.now();
-        if (occurredStr != null) {
-            try {
-                occurred = Instant.parse(occurredStr);
-            } catch (DateTimeParseException e) {
-                throw new ProcessingException("PARSE_ERROR", "Line " + rowNumber + ": bad occurredAt: " + occurredStr);
-            }
+        Instant occurred;
+        try {
+            occurred = OccurredAtParsing.parseBatchTimestampLenient(occurredStr);
+        } catch (DateTimeParseException e) {
+            throw new ProcessingException(
+                    "PARSE_ERROR", "Line " + rowNumber + ": bad occurredAt: " + occurredStr, e);
         }
         return new ParsedFileRow(rowNumber, card, cardholder, amount, currency, occurred);
     }

@@ -263,28 +263,59 @@ tx_body_ok = {
     "amount": 25.5,
     "currency": "USD",
 }
+tx_create_one = [tx_body_ok]
+tx_create_bulk = [
+    tx_body_ok,
+    {
+        "cardholderName": "Postman Bulk 2",
+        "cardNumber": "5555555555554444",
+        "amount": 10.0,
+        "currency": "USD",
+    },
+]
 transactions = [
     req(
-        "POST /transactions — create manual (201)",
+        "POST /transactions — create manual (201) JSON array",
         "POST",
         f"{B}/api/v1/transactions",
-        body=tx_body_ok,
+        body=tx_create_one,
         auth="tokenAdmin",
-        desc="Requires `TRANSACTIONS_WRITE`. Saves `lastTransactionId` for the next request.",
+        desc="Requires `TRANSACTIONS_WRITE`. Body must be a **non-empty JSON array** of transaction objects. Saves `lastTransactionId` from the first created row (for GET-by-id next).",
         tests="""pm.test("HTTP 201", function() { pm.response.to.have.status(201); });
 var j = pm.response.json();
-pm.collectionVariables.set("lastTransactionId", j.id);
-pm.test("masked PAN", function() { pm.expect(j).to.have.property("cardLast4"); });""",
+pm.test("array response", function() { pm.expect(j).to.be.an("array").that.is.not.empty; });
+pm.collectionVariables.set("lastTransactionId", j[0].id);
+pm.test("masked PAN", function() { pm.expect(j[0]).to.have.property("cardLast4"); });""",
+    ),
+    req(
+        "POST /transactions — create manual bulk 2 rows (201)",
+        "POST",
+        f"{B}/api/v1/transactions",
+        body=tx_create_bulk,
+        auth="tokenAdmin",
+        desc="Creates two accepted transactions in one request; rolls back entirely if any row fails validation or processing.",
+        tests="""pm.test("HTTP 201", function() { pm.response.to.have.status(201); });
+var j = pm.response.json();
+pm.test("two created", function() { pm.expect(j).to.be.an("array").with.lengthOf(2); });""",
     ),
     req(
         "POST /transactions — NEG: invalid card (400)",
         "POST",
         f"{B}/api/v1/transactions",
-        body={**tx_body_ok, "cardNumber": "41"},
+        body=[{**tx_body_ok, "cardNumber": "41"}],
         auth="tokenAdmin",
         desc="`cardNumber` must be 12–19 digits.",
         tests="""pm.test("HTTP 400", function() { pm.response.to.have.status(400); });
 pm.test("code", function() { pm.expect(pm.response.json().code).to.equal("VALIDATION_ERROR"); });""",
+    ),
+    req(
+        "POST /transactions — NEG: empty array (400)",
+        "POST",
+        f"{B}/api/v1/transactions",
+        body=[],
+        auth="tokenAdmin",
+        desc="Body must be a non-empty JSON array.",
+        tests="""pm.test("HTTP 400", function() { pm.response.to.have.status(400); });""",
     ),
     req(
         "GET /transactions/{id} (200)",
@@ -317,7 +348,7 @@ pm.test("paged", function() { pm.expect(j).to.have.property("content"); });""",
         "POST /transactions — NEG: analyst (403)",
         "POST",
         f"{B}/api/v1/transactions",
-        body=tx_body_ok,
+        body=tx_create_one,
         auth="tokenAnalyst",
         desc="ANALYST has no `TRANSACTIONS_WRITE`.",
         tests="""pm.test("HTTP 403", function() { pm.response.to.have.status(403); });
@@ -327,7 +358,7 @@ pm.test("FORBIDDEN", function() { pm.expect(pm.response.json().code).to.equal("F
         "POST /transactions — NEG: viewer (403)",
         "POST",
         f"{B}/api/v1/transactions",
-        body=tx_body_ok,
+        body=tx_create_one,
         auth="tokenViewer",
         desc="VIEWER has no `TRANSACTIONS_WRITE`.",
         tests="""pm.test("HTTP 403", function() { pm.response.to.have.status(403); });""",
@@ -342,7 +373,11 @@ pm.test("FORBIDDEN", function() { pm.expect(pm.response.json().code).to.equal("F
     ),
 ]
 collection["item"].append(
-    folder("2. Transactions", "Manual create, get by id, list. **Requires `lastTransactionId` from the first request.**", transactions)
+    folder(
+        "2. Transactions",
+        "Manual create (POST body = JSON **array** of txn objects), get by id, list. **Requires `lastTransactionId` from the create request.**",
+        transactions,
+    )
 )
 
 # 3. Batch

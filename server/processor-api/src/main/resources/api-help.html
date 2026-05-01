@@ -74,7 +74,7 @@
         <tr><td class="method">GET</td><td class="path">/api/v1/auth/me</td><td>authenticated</td><td>Profile, roles, permission codes</td></tr>
         <tr><td class="method">GET</td><td class="path">/api/v1/transactions</td><td>TRANSACTIONS_READ</td><td>Query: <code>from</code>, <code>to</code>, <code>cardBrands</code>, <code>minAmount</code>, <code>maxAmount</code>, <code>page</code>, <code>size</code></td></tr>
         <tr><td class="method">GET</td><td class="path">/api/v1/transactions/{id}</td><td>TRANSACTIONS_READ</td><td>Single row</td></tr>
-        <tr><td class="method">POST</td><td class="path">/api/v1/transactions</td><td>TRANSACTIONS_WRITE</td><td>Manual create (body: <code>cardNumber</code>, <code>amount</code>, <code>currency</code>, …)</td></tr>
+        <tr><td class="method">POST</td><td class="path">/api/v1/transactions</td><td>TRANSACTIONS_WRITE</td><td>Manual create — JSON <strong>array</strong> of objects (<code>cardNumber</code>, <code>amount</code>, <code>currency</code>, …); response <code>201</code> with array of created rows (same order; one transaction or many)</td></tr>
         <tr><td class="method">POST</td><td class="path">/api/v1/transactions/batch</td><td>BATCHES_WRITE</td><td>Multipart: <code>file</code>, <code>format</code> = csv | json</td></tr>
         <tr><td class="method">GET</td><td class="path">/api/v1/reports/metrics</td><td>REPORTS_READ</td><td>Query: <code>from</code>, <code>to</code> (ISO-8601)</td></tr>
         <tr><td class="method">GET</td><td class="path">/api/v1/reports/daily-volume</td><td>REPORTS_READ</td><td>Accepted daily volume</td></tr>

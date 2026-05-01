@@ -1,3 +1,4 @@
+import { Can, PERMISSIONS } from '@/features/auth';
 import {
   InsightsRow,
   SummaryCards,
@@ -21,21 +22,29 @@ export function DashboardPage() {
         </div>
       </header>
 
-      <div className={styles.row}>
-        <SummaryCards />
-      </div>
+      <Can permission={PERMISSIONS.REPORTS_READ}>
+        <div className={styles.row}>
+          <SummaryCards />
+        </div>
+      </Can>
 
-      <div className={styles.row}>
-        <InsightsRow />
-      </div>
+      <Can permission={PERMISSIONS.REPORTS_READ}>
+        <div className={styles.row}>
+          <InsightsRow />
+        </div>
+      </Can>
 
-      <div className={styles.row}>
-        <UploadPanel />
-      </div>
+      <Can anyOf={[PERMISSIONS.BATCHES_WRITE, PERMISSIONS.TRANSACTIONS_WRITE]}>
+        <div className={styles.row}>
+          <UploadPanel />
+        </div>
+      </Can>
 
-      <div className={styles.row}>
-        <TransactionsTableCard />
-      </div>
+      <Can permission={PERMISSIONS.TRANSACTIONS_READ}>
+        <div className={styles.row}>
+          <TransactionsTableCard />
+        </div>
+      </Can>
     </section>
   );
 }

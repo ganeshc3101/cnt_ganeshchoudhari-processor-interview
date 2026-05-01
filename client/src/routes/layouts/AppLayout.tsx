@@ -1,4 +1,5 @@
-import { Link, Outlet } from 'react-router-dom';
+import clsx from 'clsx';
+import { Link, NavLink, Outlet } from 'react-router-dom';
 
 import { useAuth } from '@/app/providers/AuthProvider';
 import { useSignOut } from '@/features/auth/hooks/useSignOut';
@@ -8,8 +9,8 @@ import { Logo } from '@/shared/ui/Logo';
 import { paths } from '../paths';
 import styles from './AppLayout.module.css';
 
-function initialsFor(userId: string): string {
-  const trimmed = userId.trim();
+function initialsFor(displayName: string): string {
+  const trimmed = displayName.trim();
   if (!trimmed) return '?';
   const parts = trimmed.split(/[\s._-]+/).filter(Boolean);
   if (parts.length >= 2) {
@@ -20,25 +21,40 @@ function initialsFor(userId: string): string {
 
 export function AppLayout() {
   const signOut = useSignOut();
-  const { session } = useAuth();
+  const { user } = useAuth();
 
   const handleSignOut = () => {
     void signOut();
   };
 
-  const displayName = session?.userId ?? 'Guest';
+  const displayName: string =
+    user?.displayName?.trim() ||
+    [user?.firstName, user?.lastName].filter(Boolean).join(' ').trim() ||
+    user?.username ||
+    'Guest';
   const initials = initialsFor(displayName);
 
   return (
     <div className={styles.root}>
       <header className={styles.header}>
         <div className={styles.headerInner}>
-          <Link to={paths.dashboard} className={styles.brand} aria-label="Go to dashboard">
-            <Logo />
-          </Link>
+          <div className={styles.headerStart}>
+            <NavLink
+              to={paths.dashboard}
+              className={clsx(styles.brand)}
+              aria-label="Go to dashboard"
+            >
+              <Logo />
+            </NavLink>
+          </div>
 
           <div className={styles.headerActions}>
-            <div className={styles.userChip} title={`Signed in as ${displayName}`}>
+            <Link
+              to={paths.profile}
+              className={styles.userChip}
+              title={`Signed in as ${displayName}`}
+              aria-label={`View profile for ${displayName}`}
+            >
               <span className={styles.avatar} aria-hidden="true">
                 {initials}
               </span>
@@ -49,7 +65,7 @@ export function AppLayout() {
                 </span>
                 <span className={styles.userName}>{displayName}</span>
               </span>
-            </div>
+            </Link>
 
             <button
               type="button"

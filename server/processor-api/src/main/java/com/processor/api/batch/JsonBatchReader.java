@@ -3,6 +3,7 @@ package com.processor.api.batch;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.processor.core.model.ParsedFileRow;
+import com.processor.core.parser.OccurredAtParsing;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
@@ -45,7 +46,7 @@ public class JsonBatchReader {
             }
             String ch = text(o, "cardholderName", "name", "cardholder");
             String ts = text(o, "occurredAt", "timestamp", "time");
-            Instant when = ts != null && !ts.isEmpty() ? Instant.parse(ts) : Instant.now();
+            Instant when = OccurredAtParsing.parseBatchTimestampLenient(ts);
             if (card == null || amount == null) {
                 continue;
             }

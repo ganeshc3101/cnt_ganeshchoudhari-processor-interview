@@ -1,14 +1,11 @@
 import { Button } from '@/shared/ui/Button';
 import { DatePicker } from '@/shared/ui/DatePicker';
-import { SearchIcon } from '@/shared/ui/icons';
-import { InputField } from '@/shared/ui/InputField';
 import { MoneyInput } from '@/shared/ui/MoneyInput';
 
 import styles from './TransactionFilters.module.css';
 import { CardTypeMultiSelect } from '../CardTypeMultiSelect';
 
 import type { CardTypeFilter, TransactionFilters } from '../../types/transaction';
-import type { ChangeEvent } from 'react';
 
 type Props = {
   filters: TransactionFilters;
@@ -17,8 +14,8 @@ type Props = {
 };
 
 export function TransactionFiltersBar({ filters, onChange, onReset }: Props) {
-  const handleSearchChange = (event: ChangeEvent<HTMLInputElement>) => {
-    onChange({ q: event.target.value });
+  const handleCardTypesChange = (next: CardTypeFilter[]) => {
+    onChange({ cardTypes: next });
   };
 
   const handleDateChange =
@@ -27,27 +24,9 @@ export function TransactionFiltersBar({ filters, onChange, onReset }: Props) {
       onChange({ [key]: next });
     };
 
-  const handleCardTypesChange = (next: CardTypeFilter[]) => {
-    onChange({ cardTypes: next });
-  };
-
   return (
     <div className={styles.root}>
-      <div className={styles.searchRow}>
-        <div className={styles.searchField}>
-          <InputField
-            label="Search"
-            placeholder="Card number or amount"
-            value={filters.q}
-            onChange={handleSearchChange}
-            autoComplete="off"
-            endAdornment={
-              <span className={styles.searchIcon} aria-hidden="true">
-                <SearchIcon />
-              </span>
-            }
-          />
-        </div>
+      <div className={styles.topRow}>
         <div className={styles.cardTypeField}>
           <CardTypeMultiSelect
             label="Card type"

@@ -1,8 +1,9 @@
 import { lazy } from 'react';
-import { Navigate, Route, Routes } from 'react-router-dom';
+import { Route, Routes } from 'react-router-dom';
 
 import { NotFoundPage } from '@/app/router/NotFoundPage';
 
+import { DefaultRedirect } from './DefaultRedirect';
 import { RedirectIfAuth } from './guards/RedirectIfAuth';
 import { RequireAuth } from './guards/RequireAuth';
 import { AppLayout } from './layouts/AppLayout';
@@ -19,6 +20,10 @@ const DashboardPage = lazy(() =>
   })),
 );
 
+const ProfilePage = lazy(() =>
+  import('@/features/auth/pages/ProfilePage').then((m) => ({ default: m.ProfilePage })),
+);
+
 export const AppRoutes = () => (
   <Routes>
     {/* Public auth routes — redirect away if already authenticated */}
@@ -31,8 +36,9 @@ export const AppRoutes = () => (
     {/* Protected routes — require authentication */}
     <Route element={<RequireAuth />}>
       <Route element={<AppLayout />}>
-        <Route index element={<Navigate to={paths.dashboard} replace />} />
+        <Route index element={<DefaultRedirect />} />
         <Route path={paths.dashboard} element={<DashboardPage />} />
+        <Route path={paths.profile} element={<ProfilePage />} />
       </Route>
     </Route>
 
